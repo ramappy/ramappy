@@ -1,0 +1,57 @@
+:root {
+    --ramapp-accent: #5a3fd0;
+    --ramapp-accent-hover: #4631a2;
+    --ramapp-accent-dark: #a796f0;
+    /* brighter/more saturated so it pops on dark backgrounds */
+    --ramapp-accent-dark-hover: #bcaef4;
+}
+
+html[data-theme="light"] {
+    --pst-color-primary: var(--ramapp-accent);
+    --pst-color-secondary: var(--ramapp-accent);
+    --pst-color-accent: var(--ramapp-accent);
+
+    --pst-color-link: var(--ramapp-accent);
+    --pst-color-link-hover: var(--ramapp-accent-hover);
+    --pst-color-link-higher-contrast: var(--ramapp-accent-hover);
+
+    --pst-color-inline-code: var(--ramapp-accent);
+    --pst-color-inline-code-links: var(--ramapp-accent-hover);
+
+    --pst-color-text-base: oklch(0.27 0.007 290);
+
+    --pst-color-surface: oklch(0.955 0.003 290);
+    --pst-color-on-surface: oklch(0.920 0.004 290);
+}
+
+html[data-theme="dark"] {
+    --pst-color-primary: var(--ramapp-accent-dark);
+    --pst-color-secondary: var(--ramapp-accent-dark);
+    --pst-color-accent: var(--ramapp-accent-dark);
+
+    --pst-color-link: var(--ramapp-accent-dark);
+    --pst-color-link-hover: var(--ramapp-accent-dark-hover);
+    --pst-color-link-higher-contrast: var(--ramapp-accent-dark-hover);
+
+    --pst-color-inline-code: var(--ramapp-accent-dark);
+    --pst-color-inline-code-links: var(--ramapp-accent-dark-hover);
+
+    --pst-color-text-base: oklch(0.88 0.004 290);
+    --pst-color-background: oklch(0.2 0.005 290);
+
+    --pst-color-on-background: oklch(0.24 0.005 290);
+    --pst-color-surface: oklch(0.135 0.004 290);
+    --pst-color-on-surface: oklch(0.34 0.006 290);
+}
+
+/* github-dark maps Name.Namespace (the module path in `from X import Y`)
+   to the same salmon-red as keywords/operators (#ff7b72), override it */
+html[data-theme="dark"] .highlight .nn {
+    color: #e6edf3;
+}
+
+/* ensure that the article container is wide enough to accommodate the pipeline steps and io formats tables */
+.bd-article-container:has(#pipeline-steps),
+.bd-article-container:has(#io-formats) {
+    max-width: 85em;
+}

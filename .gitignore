@@ -1,0 +1,56 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# C extensions
+*.so
+
+# Distribution / packaging
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+*.txt
+*.log
+
+*.old
+
+# Sphinx documentation
+docs/_build/
+docs/reference/api/
+docs/reference/steps.md
+docs/reference/io-formats.md
+
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+.vscode
+
+.tox
+tox.ini
+*.swp
+pyvenv.cfg
+/site
+ramappy/_version.py
+
+uv.lock

@@ -1,0 +1,149 @@
+[build-system]
+requires = ["hatchling>=1.25", "hatch-vcs"]
+build-backend = "hatchling.build"
+
+[project]
+name = "ramappy"
+dynamic = ["version"]
+readme = "README.md"
+description = "Process and analyse hyperspectral data"
+requires-python = ">= 3.12"
+authors = [
+  { name = "Andrea Masella" },
+  { name = "Elia Broggio" },
+]
+license = "GPL-3.0-or-later"
+keywords = [
+  "raman",
+  "hyperspectral",
+  "spectroscopy",
+  "chemometrics",
+  "imaging",
+  "baseline",
+  "PCA",
+  "MCR",
+  "N-FINDR",
+]
+classifiers = [
+  "Development Status :: 5 - Production/Stable",
+  "Intended Audience :: Science/Research",
+  "Operating System :: OS Independent",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Programming Language :: Python :: 3.14",
+  "Topic :: Scientific/Engineering",
+  "Topic :: Scientific/Engineering :: Chemistry",
+  "Topic :: Scientific/Engineering :: Physics",
+  "Topic :: Scientific/Engineering :: Image Processing",
+]
+
+dependencies = [
+  "numpy>=1.26",
+  "scipy>=1.11",
+  "pybaselines[full]>=1.0",
+  "scikit-learn>=1.3",
+  "pyMCR>=0.4",
+  "matplotlib>=3.7",
+  "renishawWiRE>=0.1",
+  "zarr>=3.0",
+  "h5py>=3.6",
+  "numba>=0.55",
+  "PyYAML>=6.0",
+  "pydantic>=2.0",
+  "pydantic-extra-types",
+  "polars>=1.0",
+  "Pillow>=9.0",
+  "joblib>=1.1",
+  "tqdm>=4.60",
+  "zarrs>=0.2.0",
+]
+
+[project.urls]
+Homepage = "https://ramapp.io"
+Repository = "https://github.com/ramappy/ramappy"
+
+[project.optional-dependencies]
+dev = ["pytest>=7.0", "pytest-cov>=4.0", "ruff>=0.1.0", "ty>=0.0.1", "types-Pillow", "types-PyYAML", "pre-commit"]
+docs = [
+  "sphinx>=8.0",
+  "myst-parser>=3.0",
+  "sphinx-autoapi>=3.0",
+  "autodoc_pydantic>=2",
+  "numpydoc>=1.7",
+  "pydata-sphinx-theme",
+  "sphinx-design>=0.6",
+  "sphinx-argparse>=0.5",
+]
+
+[dependency-groups]
+acceleration = ["scikit-learn-intelex>=2025.11.0"]
+pandas = ["pyarrow>=7.0", "pandas>=1.3"]
+
+[tool.uv]
+default-groups = ["acceleration"]
+
+[project.scripts]
+ramappy-batch = "ramappy.cli.batch:main"
+
+[tool.hatch.version]
+source = "vcs"
+
+[tool.hatch.build.hooks.vcs]
+version-file = "ramappy/_version.py"
+
+[tool.hatch.build.targets.wheel]
+packages = ["ramappy"]
+
+[tool.pytest.ini_options]
+minversion = "6.0"
+addopts = "-ra -q"
+testpaths = ["tests"]
+filterwarnings = ["ignore::DeprecationWarning"]
+
+[tool.ty.environment]
+python-version = "3.12"
+
+[tool.ruff]
+line-length = 120
+target-version = "py312"
+
+[tool.ruff.lint]
+select = [
+  "E",   # pycodestyle errors
+  "W",   # pycodestyle warnings
+  "F",   # pyflakes
+  "I",   # isort
+  "C",   # flake8-comprehensions
+  "B",   # flake8-bugbear
+  "UP",  # pyupgrade
+  "N",   # pep8-naming
+  "SIM", # flake8-simplify
+  "PL",  # pylint
+  "NPY", # numpy-specific rules
+  "RUF", # ruff-specific rules
+]
+ignore = [
+  "PLR0913", # Too many arguments
+  "PLR2004", # Magic values
+  "N803",    # Argument name should be lowercase
+  "N806",    # Variable name should be lowercase
+  "C901",    # Cyclomatic complexity
+  "PLR0912", # Too many branches
+  "PLR0915", # Too many statements
+  "PLR0911", # Too many return statements
+  "PLC0415", # Local import
+  "N802",    # Function name should be lowercase
+  "N815",    # MixedCase variable name
+  "E501",    # Line too long
+]
+per-file-ignores = { "tests/**/*.py" = ["NPY002", "E402", "F401", "RUF003"] }
+
+[tool.ruff.lint.pydocstyle]
+convention = "numpy"
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+skip-magic-trailing-comma = false
+line-ending = "auto"
