@@ -140,14 +140,12 @@ def smooth_svd(
 
         if num_sv == min_dim:
             U, s, Vt = svd(matrix, full_matrices=False)
-            intensities = U * s @ Vt
         else:
             U, s, Vt = svds(matrix, k=num_sv, which="LM")
             sort_idx = np.argsort(s)[::-1]
             U = U[:, sort_idx]
             s = s[sort_idx]
             Vt = Vt[sort_idx, :]
-            intensities = U * s @ Vt
     else:
         U, s, Vt = svd(matrix, full_matrices=False)
 
@@ -165,7 +163,11 @@ def smooth_svd(
         if sv_keep.size == 0:
             sv_keep = np.array([int(np.argmax(spatial_signal_ratio))])
 
-        intensities = U[:, sv_keep] * s[sv_keep] @ Vt[sv_keep, :]
+        U = U[:, sv_keep]
+        s = s[sv_keep]
+        Vt = Vt[sv_keep, :]
+
+    intensities = U * s @ Vt
 
     intensities = intensities.T
 
