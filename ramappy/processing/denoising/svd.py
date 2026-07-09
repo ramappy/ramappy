@@ -45,7 +45,7 @@ def compute_spatial_signal_ratio(Vt, shape: tuple[int, int], roi_threshold: floa
         raise ValueError(f"Vt shape {Vt.shape} is incompatible with map shape {shape}.")
 
     Vcube = Vt.T.reshape(n_rows, n_cols, -1)
-    Vcube -= Vcube.mean(axis=(0, 1), keepdims=True)
+    Vcube = Vcube - Vcube.mean(axis=(0, 1), keepdims=True)
 
     Vz = np.abs(np.fft.fftshift(np.fft.fft2(Vcube, axes=(0, 1)), axes=(0, 1)))
 
