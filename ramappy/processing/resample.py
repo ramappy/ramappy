@@ -75,7 +75,7 @@ def resample(
         If method is unknown, required inputs are missing, ROIs are
         incompatible, or interpolation fails.
     """
-    if method not in ("spline", "whittaker"):
+    if method not in {"spline", "whittaker"}:
         raise ValueError(f"Method {method} is not recognized.")
 
     check_roi = True
@@ -93,8 +93,8 @@ def resample(
         # Check if x_grid is a single 1D grid (either a 1D array, or a list of numbers)
         # We can check this by testing if the first element is a scalar (i.e. not iterable)
         x_grid_arr = np.asarray(x_grid, dtype=object)
-        first_elem = x_grid_arr.flat[0] if x_grid_arr.size > 0 else None
-        is_flat_grid = not hasattr(first_elem, "__iter__") or isinstance(first_elem, (str, bytes))
+        first_elem = x_grid_arr[0] if x_grid_arr.size > 0 else None
+        is_flat_grid = first_elem is None or not hasattr(first_elem, "__iter__") or isinstance(first_elem, (str, bytes))
         x_grid = [np.asarray(x_grid, dtype=float)] if is_flat_grid else [np.asarray(r, dtype=float) for r in x_grid_arr]
         roi_x_arr = np.array([[ri[0], ri[-1]] for ri in x_grid])
 

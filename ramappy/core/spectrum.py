@@ -413,7 +413,7 @@ class Spectrum:
         if x_resampling_grid is not None:
             from ramappy.processing import resample
 
-            resample(new_spectrum, x_grid=x_resampling_grid, bounds_error=False)
+            resample(new_spectrum, x_grid=x_resampling_grid)
             return new_spectrum
 
         new_spectrum.data = new_spectrum.data[:, x_idx_ref]
