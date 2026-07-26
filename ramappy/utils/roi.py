@@ -41,38 +41,66 @@ def find_nearest_x_many(x: np.ndarray, roi_x: np.ndarray) -> np.ndarray:
     return np.where(choose_left, left, right).astype(np.int64)
 
 
-@jit(cache=True)
-def common_roi_overlap(roi_A: np.ndarray, roi_B: np.ndarray) -> np.ndarray:
-    """Find common overlap between two sets of ROIs.
+@jit(nopython=True, cache=True)
+def _common_roi_overlap_core(roi_A: np.ndarray, roi_B: np.ndarray) -> np.ndarray:
+    """Numba core for `common_roi_overlap`. Expects `roi_A` and `roi_B` to already share a dtype."""
+    n_a = roi_A.shape[0]
+    n_b = roi_B.shape[0]
 
-    Parameters
-    ----------
-    roi_A : np.ndarray
-        First set of ROIs.
-    roi_B : np.ndarray
-        Second set of ROIs.
-
-    Returns
-    -------
-    np.ndarray
-        Common ROIs.
-    """
-    common_roi = []
+    # Preallocate: there can never be more overlaps than min(n_a, n_b), but
+    # sizing on n_a + n_b keeps the bookkeeping trivial and the cost negligible.
+    out = np.empty((n_a + n_b, 2), dtype=roi_A.dtype)
+    count = 0
     i = 0
     j = 0
 
-    while i < len(roi_A) and j < len(roi_B):
+    while i < n_a and j < n_b:
         l_end = max(roi_A[i, 0], roi_B[j, 0])
         r_end = min(roi_A[i, 1], roi_B[j, 1])
         if l_end < r_end:
-            common_roi.append([l_end, r_end])
+            out[count, 0] = l_end
+            out[count, 1] = r_end
+            count += 1
 
         if roi_A[i, 1] < roi_B[j, 1]:
             i += 1
         else:
             j += 1
 
-    return np.asarray(common_roi)
+    return out[:count].copy()
+
+
+def common_roi_overlap(roi_A: np.ndarray, roi_B: np.ndarray) -> np.ndarray:
+    """Find the common overlap between two sets of ROIs.
+
+    Both ROI arrays must be sorted by their start column and contain
+    non-overlapping intervals within themselves (the usual output of
+    `get_x_regions`/`clean_roi`).
+
+    Parameters
+    ----------
+    roi_A : np.ndarray, shape (N, 2)
+        First set of ROIs.
+    roi_B : np.ndarray, shape (M, 2)
+        Second set of ROIs.
+
+    Returns
+    -------
+    np.ndarray, shape (K, 2)
+        Common ROIs. Always 2D, even when K is 0 (no overlap) so callers
+        can rely on `.shape[0]` / `.shape[1]` without special-casing.
+
+    Notes
+    -----
+    Both inputs are run through `clean_roi` first, so they are reshaped to (N, 2) and (M, 2) if necessary.
+
+    `roi_A` and `roi_B` are also cast to a shared dtype (via
+    `np.result_type`) before entering the jitted core.
+    """
+    roi_A = clean_roi(roi_A)
+    roi_B = clean_roi(roi_B)
+    dtype = np.result_type(roi_A.dtype, roi_B.dtype)
+    return _common_roi_overlap_core(roi_A.astype(dtype), roi_B.astype(dtype))
 
 
 def clean_roi(region_of_interest: list | np.ndarray) -> np.ndarray:
@@ -91,7 +119,7 @@ def clean_roi(region_of_interest: list | np.ndarray) -> np.ndarray:
     return np.array(region_of_interest).reshape(-1, 2)
 
 
-@jit(cache=True)
+@jit(nopython=True, cache=True)
 def find_nearest_x(x: np.ndarray, roi_x: float) -> int:
     """Find nearest index in x for a given value roi_x.
 
@@ -143,9 +171,6 @@ def get_x_regions(wn: np.ndarray, threshold: float = 10) -> np.ndarray:
     wn_d = np.diff(wn)
     sep = np.argwhere(np.abs(wn_d - wn_d.mean()) > threshold * wn_d.std()).ravel()
     if len(sep):
-        # endpoints = np.sort(np.concatenate([endpoints, wn[sep], wn[sep + 1]]))
-        # endpoints = np.sort(np.hstack([endpoints, wn[sep], wn[sep + 1]]))
-        # endpoints = np.array(set([*endpoints, *wn[sep], *wn[sep + 1]]))
         endpoints = np.sort(np.unique(np.concatenate((endpoints, wn[sep], wn[sep + 1]), 0)))
     return endpoints.reshape(-1, 2)
 
@@ -177,8 +202,10 @@ def select_x_indices(x: np.ndarray, roi_x: npt.ArrayLike | int | float | None, k
         return slice(None)
     roi_x_arr = clean_roi(roi_x_arr)
 
-    starts = find_nearest_x_many(x, roi_x_arr[:, 0])
-    ends = find_nearest_x_many(x, roi_x_arr[:, 1])
+    # One combined nearest-index search for both the start and end columns
+    n_regions = roi_x_arr.shape[0]
+    combined_idx = find_nearest_x_many(x, np.concatenate((roi_x_arr[:, 0], roi_x_arr[:, 1])))
+    starts, ends = combined_idx[:n_regions], combined_idx[n_regions:]
 
     # Ensure each interval is increasing in index space.
     lo = np.minimum(starts, ends)
