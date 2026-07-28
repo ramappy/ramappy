@@ -11,7 +11,9 @@ from __future__ import annotations
 import base64
 import contextlib
 import warnings
+from collections.abc import Callable
 from io import BytesIO
+from typing import Any
 
 import numpy as np
 import numpy.typing as npt
@@ -37,6 +39,17 @@ class _SpectralMapImagesMixin:
     map_shape: tuple[int, int]
     img_width: int
     img_height: int
+
+    def get_mask(self, mask_id: str | None = None) -> Mask:
+        return super().get_mask(mask_id)  # type: ignore
+
+    def get_indices(
+        self, mask: str | Mask | None = None, roi_x: Any = None, ignore_empty_mask: bool = False
+    ) -> tuple[Any, Any, Any]:
+        return super().get_indices(mask=mask, roi_x=roi_x, ignore_empty_mask=ignore_empty_mask)  # type: ignore
+
+    def apply_func(self, f: Callable, **kwargs) -> np.ndarray:
+        return super().apply_func(f, **kwargs)  # type: ignore
 
     def get_image(self, image_id: str) -> Image2D:
         """Retrieve an image by ID."""
