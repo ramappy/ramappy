@@ -106,7 +106,7 @@ def resample(
         check_roi = True
         if isinstance(spectral_map, SpectralMap):
             try:
-                ref_spec, _ = spectral_map.get_reference_spectrum(ref_spectrum_id)
+                ref_spec = spectral_map.spectra[ref_spectrum_id]
             except KeyError as e:
                 raise ValueError(f"Reference spectrum '{ref_spectrum_id}' not found.") from e
         else:
@@ -120,6 +120,8 @@ def resample(
         x_grid_list = [np.asarray(ref_spec.x[idx], dtype=float) for idx in x_indices]
     else:  # x_grid is not None
         check_roi = True
+        # Check if x_grid is a single 1D grid (either a 1D array, or a list of numbers)
+        # We can check this by testing if the first element is a scalar (i.e. not iterable)
         x_grid_arr = np.asarray(x_grid, dtype=object)
         first_elem = x_grid_arr[0] if x_grid_arr.size > 0 else None
         is_flat_grid = first_elem is None or not hasattr(first_elem, "__iter__") or isinstance(first_elem, (str, bytes))
