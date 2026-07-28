@@ -30,7 +30,7 @@ Supported methods: `arpls`, `airpls`, `iarpls` (PLS-based), `poly` (polynomial),
 
 ### Resampling
 
-{py:func}`ramappy.processing.resample.resample` resamples the spectral axis to a new uniform grid using interpolation.
+{py:func}`ramappy.processing.resample.resample` resamples the spectral axis onto a target grid defined by a step size (`spectrum_step`), reference spectrum ID (`ref_spectrum_id`), or explicit grid (`x_grid`) using interpolation.
 
 **Full reference:** {py:mod}`ramappy.processing.resample`
 
