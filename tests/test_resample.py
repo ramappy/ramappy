@@ -57,18 +57,18 @@ def test_resample_ref_spectrum_id_multi_roi():
     np.testing.assert_allclose(smap.roi_x, ref_roi)
 
 
-def test_resample_ref_spectrum_id_mask():
+def test_resample_rejects_non_external_reference():
     x = np.linspace(100.0, 200.0, 10)
     data = np.ones((4, 10), dtype=float)
     smap = SpectralMap(x=x, data=data, img_width=2, img_height=2)
     smap.masks["m1"] = smap.new_mask(idxs=[0, 1])
 
-    # Mask spectrum has same x axis initially
-    ref_spec = smap.get_spectrum(mask="m1")
-    assert ref_spec.x is not None
+    # Mask, image and cursor spectra are derived from the map and always share its
+    # spectral axis, so they cannot define a new target grid.
+    np.testing.assert_allclose(smap.get_spectrum(mask="m1").x, smap.x)
 
-    resample(smap, ref_spectrum_id="m1")
-    np.testing.assert_allclose(smap.x, ref_spec.x)
+    with pytest.raises(ValueError, match="Reference spectrum 'm1' not found"):
+        resample(smap, ref_spectrum_id="m1")
 
 
 def test_resample_mutually_exclusive_validation():
