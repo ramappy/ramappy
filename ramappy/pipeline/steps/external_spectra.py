@@ -60,6 +60,13 @@ def add_spectrum(
     format_params : dict
         Format-specific reader parameters.
 
+    Notes
+    -----
+    If the imported spectrum carries no ``x_axis_unit`` or ``data_unit`` (e.g.,
+    a plain CSV with no metadata), the corresponding unit is inherited from
+    *spectral_map* so that axis labels and unit-compatibility checks work
+    correctly throughout the pipeline.
+
     Raises
     ------
     ValueError
@@ -73,6 +80,10 @@ def add_spectrum(
             f"Format {format_name} not supported. Available formats: {list(InputFormatRegistry.formats.keys())}"
         )
     spectra = reader.read(file_path, format_params, as_hsi=as_hsi)
+    if spectra.x_axis_unit is None and spectral_map.x_axis_unit is not None:
+        spectra.x_axis_unit = spectral_map.x_axis_unit
+    if spectra.data_unit is None and spectral_map.data_unit is not None:
+        spectra.data_unit = spectral_map.data_unit
     spectral_map.add_spectra(spectra, key=res_id)
 
 
