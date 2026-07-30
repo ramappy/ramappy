@@ -203,6 +203,11 @@ class InputFormat:
     def __hash__(self):
         return hash(self.format_name)
 
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, InputFormat):
+            return NotImplemented
+        return self.format_name == other.format_name
+
     def validate_params(
         self,
         params: dict[str, Any] | IOParams,
@@ -371,7 +376,12 @@ class OutputFormat:
         return f'<OutputFormat "{self.friendly_name}" ({self.format_name})>'
 
     def __hash__(self):
-        return hash(self.format_name)
+        return hash((self.format_name, self.supported_types))
+
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, OutputFormat):
+            return NotImplemented
+        return (self.format_name, self.supported_types) == (other.format_name, other.supported_types)
 
     def validate_params(
         self,
