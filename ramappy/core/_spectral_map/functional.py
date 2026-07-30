@@ -91,6 +91,10 @@ class _SpectralMapFunctionalMixin:
     img_height: int
     img_width: int
 
+    @property
+    def x_size(self) -> int:
+        raise NotImplementedError
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 

@@ -125,6 +125,7 @@ select = [
 ]
 ignore = [
   "PLR0913", # Too many arguments
+  "PLR0917", # Too many positional arguments
   "PLR2004", # Magic values
   "N803",    # Argument name should be lowercase
   "N806",    # Variable name should be lowercase

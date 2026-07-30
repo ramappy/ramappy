@@ -5,7 +5,6 @@ This module is internal: public API remains in :mod:`ramappy.core.spectral_map`.
 
 from __future__ import annotations
 
-from abc import abstractmethod
 from typing import Literal
 
 import matplotlib.colors as cls
@@ -35,10 +34,11 @@ class _SpectralMapMasksMixin:
     images: OrderedEntityMap[Image2D]
     map_shape: tuple[int, int]
 
-    @abstractmethod
-    def get_band_intensity(self, **kwargs) -> np.ndarray: ...
-    @abstractmethod
-    def get_image(self, image_id: str) -> Image2D: ...
+    def get_band_intensity(self, **kwargs) -> np.ndarray:
+        raise NotImplementedError
+
+    def get_image(self, image_id: str) -> Image2D:
+        raise NotImplementedError
 
     def update_masks_group_color(self, group: str | MaskGroup, colormap: str | None = None):
         """Update the color of a mask group."""

@@ -9,6 +9,7 @@ Public API
 from __future__ import annotations
 
 import warnings
+from collections.abc import Callable
 from typing import Any, Literal
 
 import numpy as np
@@ -321,6 +322,28 @@ class SpectralMap(_SpectralMapFunctionalMixin, _SpectralMapImagesMixin, _Spectra
                 stacklevel=2,
             )
             crop_spatial(self, row_end=img_height, col_end=img_width)
+
+    def apply_func(
+        self,
+        f: Callable,
+        *,
+        data: SpectralData | None = None,
+        preserve_input_dtype: bool = True,
+        by: Literal["pixel", "wavenumber", "map"] = "pixel",
+        flatten: bool = True,
+        parallel: bool | Literal["threads", "processes"] | None = None,
+        **kwargs,
+    ) -> np.ndarray:
+        """Apply a function to SpectralMap data with optional parallelization."""
+        return super().apply_func(
+            f,
+            data=data,
+            preserve_input_dtype=preserve_input_dtype,
+            by=by,
+            flatten=flatten,
+            parallel=parallel,
+            **kwargs,
+        )
 
     # index helpers
 
