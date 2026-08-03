@@ -75,6 +75,52 @@ def test_apply_func_pixel(sample_hsi):
     assert np.array_equal(res, sample_hsi.data * 2)
 
 
+def test_apply_func_map(sample_hsi):
+    """Test apply_func by map."""
+
+    # Function to double the values
+    def double(x):
+        return x * 2
+
+    res = sample_hsi.apply_func(double, by="map")
+    assert np.array_equal(res, sample_hsi.data * 2)
+
+    res = sample_hsi.apply_func(double, by="map", flatten=False)
+    assert np.array_equal(res, sample_hsi.cube * 2)
+
+
+def test_apply_func_map_iterates_over_height_width_slices():
+    """Test apply_func by map feeds (height, width) maps, one per wavenumber."""
+    x = np.linspace(100, 200, 4)
+    # 6 pixels, 4 spectral points; pixel i has a flat spectrum of value (i+1).
+    intensities = np.arange(1, 7, dtype=float)[:, None] * np.ones_like(x)
+    hsi = SpectralMap(x=x, data=intensities, img_width=2, img_height=3)
+
+    shapes = []
+
+    def record(m):
+        shapes.append(m.shape)
+        return m
+
+    res = hsi.apply_func(record, by="map", flatten=False)
+    assert shapes == [(3, 2)] * 4
+    assert np.array_equal(res, hsi.cube)
+
+
+def test_apply_func_map_on_wavenumber_subset(sample_hsi):
+    """Test apply_func by map when data covers only part of the spectral axis."""
+
+    def double(x):
+        return x * 2
+
+    # A roi_x selection narrows the spectral axis: 25 pixels, 4 of 10 wavenumbers.
+    subset = np.asarray(sample_hsi.data)[:, :4]
+
+    res = sample_hsi.apply_func(double, data=subset, by="map")
+    assert res.shape == subset.shape
+    assert np.array_equal(res, subset * 2)
+
+
 def test_math_sub_spectrum(sample_hsi):
     """Test subtraction of a spectrum."""
     # Subtract the mean spectrum from the dataset

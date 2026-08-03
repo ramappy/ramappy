@@ -128,15 +128,16 @@ class _SpectralMapFunctionalMixin:
         if by == "pixel":
             return _apply_rows(f, spectral_data, use_parallel, parallel_backend, progress_wrapper, output_dtype, kwargs)
         if by == "map":
-            cube = spectral_data.cube
-            # Iterate over wavenumber slices: (W, H, N) -> iterate N slices of shape (W, H)
+            # `spectral_data` is an ndarray here; infer the spectral size to allow roi_x subsets.
+            cube = spectral_data.reshape(self.img_height, self.img_width, -1)
+            # Iterate over wavenumber slices: (H, W, N) -> iterate N slices of shape (H, W)
             transposed_cube = np.transpose(cube, axes=[2, 0, 1])
             result = _apply_rows(
                 f, transposed_cube, use_parallel, parallel_backend, progress_wrapper, output_dtype, kwargs
             )
             result = np.transpose(result, axes=(1, 2, 0))
             if flatten:
-                return result.reshape(self.img_height * self.img_width, self.x_size)
+                return result.reshape(self.img_height * self.img_width, -1)
             return result
 
         raise ValueError(f"Invalid value for 'by': {by}. Must be one of 'pixel', 'wavenumber', 'map'")
