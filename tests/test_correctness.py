@@ -3,11 +3,13 @@ from __future__ import annotations
 import numpy as np
 import pytest
 from PIL import Image
+from scipy.ndimage import median_filter
 
 from ramappy.core.images2d import Image2D, Image2DRenderer
 from ramappy.core.spectral_map import SpectralMap
 from ramappy.processing.baseline import correct_baseline
 from ramappy.processing.denoising.despike import despike
+from ramappy.processing.denoising.smooth_spatial import smooth_spatial
 from ramappy.processing.geometric.crop import crop_spatial
 from ramappy.processing.normalize import normalize_intensities
 from ramappy.processing.resample import resample
@@ -68,6 +70,49 @@ def test_despike_mask_mapping_correctness():
 
     # Absolute index 0 should NOT be affected (which would happen if relative index 0 was corrected)
     np.testing.assert_allclose(hsi.data[0], intensities[0], atol=1e-5)
+
+
+def _expected_median_smoothed(intensities: np.ndarray, img_height: int, img_width: int, size: int) -> np.ndarray:
+    cube = intensities.reshape(img_height, img_width, -1)
+    smoothed = np.stack(
+        [median_filter(cube[:, :, k], size=size, mode="reflect") for k in range(cube.shape[2])], axis=-1
+    )
+    return smoothed.reshape(img_height * img_width, -1)
+
+
+def test_smooth_spatial_correctness():
+    rng = np.random.default_rng(0)
+    x = np.linspace(100.0, 200.0, 8)
+    # Non-square map, so a transposed reshape cannot pass unnoticed
+    img_width, img_height = 2, 3
+    intensities = rng.normal(size=(img_width * img_height, x.size))
+    hsi = SpectralMap(x=x, data=intensities.copy(), img_width=img_width, img_height=img_height)
+
+    smooth_spatial(hsi, method="median", size=3)
+
+    expected = _expected_median_smoothed(intensities, img_height, img_width, size=3)
+    np.testing.assert_allclose(hsi.data, expected)
+
+
+def test_smooth_spatial_roi_leaves_other_wavenumbers_untouched():
+    rng = np.random.default_rng(0)
+    x = np.linspace(100.0, 200.0, 8)
+    img_width, img_height = 2, 3
+    intensities = rng.normal(size=(img_width * img_height, x.size))
+    hsi = SpectralMap(x=x, data=intensities.copy(), img_width=img_width, img_height=img_height)
+
+    roi_x = [120.0, 160.0]
+    _idxs, x_idx, _px_idx = hsi.get_indices(roi_x=roi_x)
+    in_roi = np.zeros(x.size, dtype=bool)
+    in_roi[x_idx] = True
+    assert 0 < in_roi.sum() < x.size
+
+    smooth_spatial(hsi, method="median", size=3, roi_x=roi_x)
+
+    # The filter is spatial, so each ROI channel matches the full-axis result on that channel
+    expected = _expected_median_smoothed(intensities, img_height, img_width, size=3)
+    np.testing.assert_allclose(hsi.data[:, in_roi], expected[:, in_roi])
+    np.testing.assert_allclose(hsi.data[:, ~in_roi], intensities[:, ~in_roi])
 
 
 def test_baseline_force_nonnegative_per_pixel():
