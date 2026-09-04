@@ -158,12 +158,14 @@ def nfindr(
         masks_group_key = f"{group_key}_mask"
         masks_ids: list[str] = []
         for i in reversed(range(n_endmembers)):
-            img_viz = spectral_map.images[img_ids[i]].viz_rules
+            img_key = f"{group_key}_{i}"
+            img_viz = spectral_map.images[img_key].viz_rules
             mask_key = f"{masks_group_key}_{i}"
+            color = str(img_viz.cmap) if img_viz is not None and img_viz.cmap is not None else None
             spectral_map.masks[mask_key] = spectral_map.new_mask(
                 idxs=[nf.endmember_indices_[i]],
                 name=f"Endmember {i + 1} mask",
-                color=(img_viz.cmap if img_viz is not None else None),
+                color=color,
                 parent_group=masks_group_key,
                 editable=False,
                 visible=i < MAX_IMG_TO_SHOW,
