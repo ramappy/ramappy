@@ -10,7 +10,7 @@ def test_pipeline_basic_run():
     intensities = np.ones((25, 200), dtype=np.float32)
     hsi = SpectralMap(x=x, data=intensities, img_width=5, img_height=5)
 
-    # Create a pipeline with a simple math operation (multiply by 2)
+    # Create a pipeline with a simple math operation (subtract a constant)
     # The math_operation step uses: operand, agg_operand, mask, op, roi_x
     step = ProcessingStepConfig(
         step_id="math_1",
@@ -38,6 +38,7 @@ def test_pipeline_serialization(tmp_path):
     assert len(loaded.steps) == 1
     assert loaded.steps[0].name == "math_operation"
     assert loaded.steps[0].params.B == 2.0
+
 
 def test_pipeline_serialization_uses_safe_yaml_for_array_parameters(tmp_path):
     yaml_path = tmp_path / "pipeline_with_roi.yaml"

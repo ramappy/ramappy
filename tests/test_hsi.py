@@ -4,6 +4,7 @@ import pytest
 from ramappy import units
 from ramappy.core.images2d import SpatialGrid
 from ramappy.core.spectral_map import SpectralMap
+from ramappy.core.spectrum import Spectrum
 
 
 @pytest.fixture
@@ -119,6 +120,21 @@ def test_apply_func_map_on_wavenumber_subset(sample_hsi):
     res = sample_hsi.apply_func(double, data=subset, by="map")
     assert res.shape == subset.shape
     assert np.array_equal(res, subset * 2)
+
+
+def test_math_sub_per_pixel_reference_map():
+    """A full per-pixel reference (one row per pixel) must subtract elementwise, not by broadcasting a (H, W, C) shape."""
+    x = np.linspace(100.0, 200.0, 4)
+    img_width, img_height = 3, 2  # H != W to catch a reshape-to-map_shape regression
+    n_pixels = img_width * img_height
+
+    hsi = SpectralMap(x=x, data=np.zeros((n_pixels, 4)), img_width=img_width, img_height=img_height)
+    ref_data = np.arange(n_pixels * 4, dtype=float).reshape(n_pixels, 4)
+    ref_spectrum = Spectrum(x=x, data=ref_data)
+
+    hsi.math(operand=ref_spectrum, op="sub")
+
+    np.testing.assert_allclose(hsi.data, -ref_data)
 
 
 def test_math_sub_spectrum(sample_hsi):

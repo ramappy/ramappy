@@ -4,20 +4,24 @@ from ramappy.core import plugin_factory
 
 
 class _DummyEP:
-    def __init__(self, name, should_fail=False):
+    def __init__(self, name, should_fail=False, load_order=None):
         self.name = name
         self._should_fail = should_fail
+        self._load_order = load_order
         self.loaded = 0
 
     def load(self):
         self.loaded += 1
+        if self._load_order is not None:
+            self._load_order.append(self.name)
         if self._should_fail:
             raise RuntimeError("boom")
 
 
 def test_discover_plugins_is_cached_and_sorted(monkeypatch):
-    ep_b = _DummyEP("b")
-    ep_a = _DummyEP("a")
+    load_order: list[str] = []
+    ep_b = _DummyEP("b", load_order=load_order)
+    ep_a = _DummyEP("a", load_order=load_order)
 
     calls = []
 
@@ -34,6 +38,7 @@ def test_discover_plugins_is_cached_and_sorted(monkeypatch):
     assert calls == ["ramappy.plugins.io"]
     assert ep_a.loaded == 1
     assert ep_b.loaded == 1
+    assert load_order == ["a", "b"]
 
 
 def test_discover_plugins_warns_on_broken_plugin(monkeypatch):

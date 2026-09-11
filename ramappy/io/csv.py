@@ -12,6 +12,7 @@ from ramappy.core import SpectralMap, Spectrum
 from ramappy.io.core import (
     IOParams,
     IOParamsAsHsi,
+    IOParamsUnits,
     SpectrumType,
     input_format,
     metadata_as_extra,
@@ -33,7 +34,7 @@ NPDTYPE_TO_PLDTYPE = {
 }
 
 
-class CsvInputParams(IOParams, IOParamsAsHsi):
+class CsvInputParams(IOParams, IOParamsAsHsi, IOParamsUnits):
     """Parameters for reading CSV files."""
 
     img_width: int | None = None

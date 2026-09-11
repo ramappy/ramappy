@@ -124,6 +124,7 @@ select = [
   "RUF", # ruff-specific rules
 ]
 ignore = [
+  "PLR0904", # Too many public methods
   "PLR0913", # Too many arguments
   "PLR0917", # Too many positional arguments
   "PLR2004", # Magic values

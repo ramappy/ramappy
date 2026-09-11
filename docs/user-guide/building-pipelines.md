@@ -59,10 +59,10 @@ documents the separate (but related) YAML shape used by the batch CLI, which wra
 
 ## Serializing a pipeline you built in Python
 
-{py:meth}`Pipeline.to_yaml() <ramappy.pipeline.pipeline.Pipeline.to_yaml>` round-trips simple
-parameter values (numbers, strings, plain lists) back to YAML. Parameters that get normalized
-into NumPy arrays internally (for example `roi_x`) are not YAML-safe once validated — write the
-YAML by hand for those, as in the example above, rather than round-tripping through `to_yaml()`.
+{py:meth}`Pipeline.to_yaml() <ramappy.pipeline.pipeline.Pipeline.to_yaml>` is safe for ordinary
+pipeline configuration data, including array-valued step parameters such as `roi_x`.
+It serializes each step via `model_dump(mode="json")` and writes YAML with the standard safe
+serializer, so the result can be read back with {py:meth}`Pipeline.from_yaml() <ramappy.pipeline.pipeline.Pipeline.from_yaml>` without hand-editing the file.
 
 ## Running against real data
 

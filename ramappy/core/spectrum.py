@@ -376,7 +376,7 @@ class Spectrum:
         ):
             raise ValueError("Reference spectrum has a different spectral unit")
 
-        if allow_multiple_spectra and np.squeeze(spectrum.data).ndim != 1:
+        if not allow_multiple_spectra and np.squeeze(spectrum.data).ndim != 1:
             raise ValueError("Reference spectrum is composed of multiple spectra")
 
         if common_spectral_axis:

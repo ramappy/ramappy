@@ -315,17 +315,21 @@ def patched_collect_pages(app):
         while "." in parent:
             parent = parent.rsplit(".", 1)[0]
             if parent in modnames:
-                parents.append({
-                    "link": urito(
-                        pagename,
-                        posixpath.join(sphinx.ext.viewcode.OUTPUT_DIRNAME, parent.replace(".", "/")),
-                    ),
-                    "title": parent,
-                })
-        parents.append({
-            "link": urito(pagename, posixpath.join(sphinx.ext.viewcode.OUTPUT_DIRNAME, "index")),
-            "title": _("Module code"),
-        })
+                parents.append(
+                    {
+                        "link": urito(
+                            pagename,
+                            posixpath.join(sphinx.ext.viewcode.OUTPUT_DIRNAME, parent.replace(".", "/")),
+                        ),
+                        "title": parent,
+                    }
+                )
+        parents.append(
+            {
+                "link": urito(pagename, posixpath.join(sphinx.ext.viewcode.OUTPUT_DIRNAME, "index")),
+                "title": _("Module code"),
+            }
+        )
         parents.reverse()
         context = {
             "parents": parents,
