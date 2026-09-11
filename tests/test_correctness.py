@@ -45,6 +45,18 @@ def test_spectral_position_normalization_correctness():
     np.testing.assert_allclose(hsi2.data, expected, rtol=1e-6)
 
 
+def test_align_external_spectrum_allow_multiple_spectra_guard():
+    x = np.linspace(100.0, 200.0, 10)
+    hsi = SpectralMap(x=x, data=np.ones((4, 10)), img_width=2, img_height=2)
+    multi_row_spectrum = SpectralMap(x=x, data=np.ones((2, 10)), img_width=2, img_height=1)
+
+    with pytest.raises(ValueError, match="composed of multiple spectra"):
+        hsi.align_external_spectrum(multi_row_spectrum, allow_multiple_spectra=False)
+
+    # Should not raise when multiple spectra are explicitly allowed.
+    hsi.align_external_spectrum(multi_row_spectrum, allow_multiple_spectra=True)
+
+
 def test_despike_mask_mapping_correctness():
     x = np.linspace(100.0, 200.0, 10)
     # 6 pixels, only pixel 2 has a cosmic ray spike at index 5

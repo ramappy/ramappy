@@ -186,8 +186,8 @@ class Mask:
 
         if morphology_minsize is not None:
             connectivity_matrix, n_components = label(img, structure=generate_binary_structure(2, 1))
-            if n_components + 1 > 2:  # +1 for the bg, as `label` finds objects _other than the bg_
-                # we have more than 2 connected regions (ie, maybe something other than the bg and the true fg)
+            if n_components > 1:  # `label` counts foreground components only, background is never one of them
+                # we have more than 1 connected region (ie, maybe something other than the true fg)
                 component_sizes = np.bincount(connectivity_matrix.ravel())
 
                 too_small = component_sizes < morphology_minsize

@@ -586,7 +586,8 @@ class SpectralMap(_SpectralMapFunctionalMixin, _SpectralMapImagesMixin, _Spectra
                 spectrum, needs_alignment = self.get_reference_spectrum(operand, agg_operand, roi_x)
 
             if needs_alignment:
-                spectrum = self.align_external_spectrum(spectrum, overlap="full")
+                # allow_multiple_spectra=True: a full per-pixel reference map is a supported operand below
+                spectrum = self.align_external_spectrum(spectrum, overlap="full", allow_multiple_spectra=True)
             ref_data: Any = spectrum.data
         elif np.ndim(operand) == 0:
             ref_data = operand
@@ -597,7 +598,8 @@ class SpectralMap(_SpectralMapFunctionalMixin, _SpectralMapImagesMixin, _Spectra
             if ref_data.shape[const.Axis.PIXEL] != np.prod(self.map_shape):  # type: ignore
                 ref_data = aggregate(ref_data, agg=agg_operand)  # type: ignore
             else:
-                ref_data = ref_data.reshape(*self.map_shape, -1)  # type: ignore
+                # keep flat (n_pixels, n_spectral) to match self._data[idxs], not the (H, W, C) map shape
+                ref_data = ref_data.reshape(-1, ref_data.shape[-1])  # type: ignore
         elif np.ndim(ref_data) == 1:
             ref_data = ref_data[np.newaxis, :]  # type: ignore
 

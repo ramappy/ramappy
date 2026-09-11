@@ -9,16 +9,16 @@ import yaml
 from joblib import Parallel, delayed
 from tqdm.auto import tqdm
 
-from ramappy.core.pipeline import ParamsOutputFile, ParamsRequireMask
-from ramappy.io.core import InputFormatRegistry
-from ramappy.pipeline import process_pipeline, validate_pipeline
+from ramappy.core.pipeline import ParamsOutputFile, ParamsRequireMask, PipelineStepRegistry
+from ramappy.pipeline import process_pipeline
+from ramappy.pipeline.configuration import BatchConfig, RuntimePipelineConfig
 
 
-def inject_outpath(config, basepath) -> None:
-    for i, (step_name, step_params) in enumerate(config["pipeline"]):
+def inject_outpath(runtime_config: RuntimePipelineConfig, basepath) -> None:
+    for i, (step, step_params) in enumerate(runtime_config.steps):
         if isinstance(step_params, ParamsOutputFile):
             if step_params.out_file is None:
-                out_filename = f"{i}{step_name}"
+                out_filename = f"{i}{step.step_name}"
                 sep = ""
                 if isinstance(step_params, ParamsRequireMask):
                     out_filename += f"_{step_params.mask}"
@@ -28,25 +28,38 @@ def inject_outpath(config, basepath) -> None:
             else:
                 out_filename = step_params.out_file.name
                 sep = "_" if out_filename[0] != "." else ""
-            config["pipeline"][i] = (
-                step_name,
+            runtime_config.steps[i] = (
+                step,
                 step_params.model_copy(update={"out_file": Path(f"{basepath}{sep}{out_filename}")}),
             )
 
 
-def inject_masks(config, mask_dir, basename) -> None:
+def inject_masks(runtime_config: RuntimePipelineConfig, mask_dir, basename) -> None:
     mask_files = list(Path(mask_dir).glob(f"{basename}_mask_*.png"))
-    mask_names = [re.findall(f"{basename}_mask_(\\w+).png", str(mf))[0] for mf in mask_files]
+    pattern = re.compile(rf"{re.escape(basename)}_mask_(\w+)\.png$")
+    mask_entries: list[tuple[Path, str]] = []
+    for mf in mask_files:
+        match = pattern.search(mf.name)
+        if match is None:
+            raise ValueError(
+                f"Mask file '{mf}' does not match the expected '{basename}_mask_<name>.png' naming pattern"
+            )
+        mask_entries.append((mf, match.group(1)))
+
+    mask_names = [name for _, name in mask_entries]
     if "substrate" in mask_names and "foreground" in mask_names:
-        seg_step = [i for i, step in enumerate(config["pipeline"]) if step["name"] == "cell_segmentation"]
-        for i in reversed(seg_step):
-            del config["pipeline"][i]
-    for mf, mn in zip(mask_files, mask_names, strict=False):
-        config["pipeline"].insert(0, {"name": "import_mask", "params": {"id": mn, "mask_path": mf}})
+        seg_steps = [i for i, (step, _) in enumerate(runtime_config.steps) if step.step_name == "cell_segmentation"]
+        for i in reversed(seg_steps):
+            del runtime_config.steps[i]
+
+    import_mask_step = PipelineStepRegistry.get_step("import_mask")
+    for mf, mask_id in mask_entries:
+        params = import_mask_step.validate_params({"id": mask_id, "mask_path": str(mf)})
+        runtime_config.steps.insert(0, (import_mask_step, params))
 
 
-def process_single_file(filename, config, output, mask_dir=None):
-    config_cur = copy.deepcopy(config)
+def process_single_file(filename, runtime_config: RuntimePipelineConfig, output, mask_dir=None):
+    config_cur = copy.deepcopy(runtime_config)
     basename = Path(filename).stem
     if mask_dir is not None:
         inject_masks(config_cur, mask_dir, basename)
@@ -84,21 +97,16 @@ def main():
     args = build_parser().parse_args()
 
     with Path(args.config_file).open(encoding="utf-8") as f:
-        config = yaml.safe_load(f)
+        raw_config = yaml.safe_load(f)
 
-    input_format = config["input"].get("format", "csv")
-    reader = InputFormatRegistry.get_format(input_format)
-    if reader is None:
-        raise ValueError(
-            f"Input format '{input_format}' not supported. Available: {list(InputFormatRegistry.formats.keys())}"
-        )
-    config["input"]["format_params"] = reader.validate_params(config["input"].get("format_params", {}))
-    config["input"]["reader"] = reader
-
-    steps = config.get("pipeline", [])
-    if not steps:
+    if not raw_config.get("pipeline"):
         raise ValueError("No steps defined in the pipeline")
-    config["pipeline"] = validate_pipeline(steps)
+
+    batch_config = BatchConfig.model_validate(raw_config)
+    reader = batch_config.input.resolve_reader()
+    # extracted before build_runtime_config(): RuntimeGeneralConfig only carries metadata_reader/inject, not this
+    mask_dir = getattr(batch_config.general, "mask_dir", None)
+    runtime_config = batch_config.build_runtime_config(reader=reader)
 
     if len(args.src_files) == 1 and Path(args.src_files[0]).is_dir():
         src_files = []
@@ -109,7 +117,8 @@ def main():
 
     output = Path(args.dest_filedir)
     output.mkdir(parents=True, exist_ok=True)
-    out_file_format = config["output"].pop("format", "csv")
+    output_cfg = runtime_config.output or {}
+    out_file_format = output_cfg.pop("format", "csv")
     out_file_ext = {"feather": ".feather", "parquet": ".parquet"}.get(out_file_format, ".csv")
     out_filename = (
         output / f"{Path(args.config_file).stem}{out_file_ext}" if not output.suffix or output.is_dir() else output
@@ -121,14 +130,13 @@ def main():
         sys.exit(1)
     out_filename.unlink(missing_ok=True)
 
-    mask_dir = config.get("general", {}).get("mask_dir")
     n_jobs = args.parallel if args.parallel != 0 else None
 
     results = Parallel(n_jobs=n_jobs)(
-        delayed(process_single_file)(f, config, output, mask_dir) for f in tqdm(src_files)
+        delayed(process_single_file)(f, runtime_config, output, mask_dir) for f in tqdm(src_files)
     )
 
-    transpose = config["output"].get("transpose", False)
+    transpose = output_cfg.get("transpose", False)
     df = pl.concat(results, how="vertical" if transpose else "align")
 
     if out_file_format == "feather":
