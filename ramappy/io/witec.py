@@ -270,7 +270,7 @@ class WITec:
 
             if block_type == "TDGraph":
                 if num_maps > 0:
-                    raise NotImplementedError("The project containts multiple maps (currently not supported)")
+                    raise NotImplementedError("The project contains multiple maps (currently not supported)")
                 num_maps += 1
                 # the actual y data
                 self.name = data_block["TData"]["Caption"]

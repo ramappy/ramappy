@@ -76,114 +76,116 @@ def read_zarr(filepath_or_buffer):
     else:
         store = ZipStore(filepath_or_buffer, mode="r")
 
-    root: Any = zarr.open(store=store, mode="r")
+    try:
+        root: Any = zarr.open(store=store, mode="r")
 
-    images: dict[str, Image2D] = {}
-    image_groups: dict[str, Image2DGroup] = {}
-    for k, im in iter_members(root["images"]):
-        if "group" in im.attrs:
-            for i, g in iter_members(im):
-                images[i] = read_zarr_image(g)
-                images[i].parent_group = k
-            image_groups[k] = Image2DGroup(
-                name=im.attrs.get("name", k),
-                visible=im.attrs.get("visible", True),
-                elem_ids=im.attrs.get("key_order", []),
-            )
+        images: dict[str, Image2D] = {}
+        image_groups: dict[str, Image2DGroup] = {}
+        for k, im in iter_members(root["images"]):
+            if "group" in im.attrs:
+                for i, g in iter_members(im):
+                    images[i] = read_zarr_image(g)
+                    images[i].parent_group = k
+                image_groups[k] = Image2DGroup(
+                    name=im.attrs.get("name", k),
+                    visible=im.attrs.get("visible", True),
+                    elem_ids=im.attrs.get("key_order", []),
+                )
+            else:
+                images[k] = read_zarr_image(im)
+
+        masks: dict[str, Mask] = {}
+        mask_groups: dict[str, MaskGroup] = {}
+        for k, m in iter_members(root["masks"]):
+            if "group" in m.attrs:
+                for i, g in iter_members(m):
+                    masks[i] = read_zarr_mask(g)
+                    masks[i].parent_group = k
+                mask_groups[k] = MaskGroup(
+                    name=m.attrs.get("name", k),
+                    visible=m.attrs.get("visible", True),
+                    color=m.attrs.get("cmap", "#ff0000"),
+                    spectrum_agg=m.attrs.get("mask_spectrum_aggregation", "mean"),
+                    elem_ids=m.attrs.get("key_order", []),
+                )
+            else:
+                masks[k] = read_zarr_mask(m)
+
+        spectra: dict[str, Spectrum] = {}
+        if "spectra" in root:
+            for k, sp_group in iter_members(root["spectra"]):
+                spectra[k] = read_spectrum(sp_group)
+
+        data = root["data/data"]
+        format_version = int(root.attrs.get("format_version", 1))
+
+        if data.ndim != 3:
+            raise ValueError(f"Invalid Zarr data shape {data.shape}: expected 3-D (height, width, n_spectral)")
+
+        if format_version >= 2:
+            img_height, img_width, n_spectral = data.shape
         else:
-            images[k] = read_zarr_image(im)
+            # legacy v1 stored as (width, height, spectral)
+            img_width, img_height, n_spectral = data.shape
+        cube = np.ascontiguousarray(data[:])
 
-    masks: dict[str, Mask] = {}
-    mask_groups: dict[str, MaskGroup] = {}
-    for k, m in iter_members(root["masks"]):
-        if "group" in m.attrs:
-            for i, g in iter_members(m):
-                masks[i] = read_zarr_mask(g)
-                masks[i].parent_group = k
-            mask_groups[k] = MaskGroup(
-                name=m.attrs.get("name", k),
-                visible=m.attrs.get("visible", True),
-                color=m.attrs.get("cmap", "#ff0000"),
-                spectrum_agg=m.attrs.get("mask_spectrum_aggregation", "mean"),
-                elem_ids=m.attrs.get("key_order", []),
+        if format_version < 2:
+            cube = np.ascontiguousarray(np.transpose(cube, (1, 0, 2)))
+
+        if root["data/x"].shape[0] != n_spectral:
+            raise ValueError(
+                "Invalid Zarr spectral axis length: "
+                f"x has length {root['data/x'].shape[0]} while data has {n_spectral} spectral channels"
             )
-        else:
-            masks[k] = read_zarr_mask(m)
 
-    spectra: dict[str, Spectrum] = {}
-    if "spectra" in root:
-        for k, sp_group in iter_members(root["spectra"]):
-            spectra[k] = read_spectrum(sp_group)
+        history = decode_dict(root.attrs.get("history", {}))
 
-    data = root["data/data"]
-    format_version = int(root.attrs.get("format_version", 1))
+        metadata = decode_dict(root.attrs.get("metadata", "{}"))
 
-    if data.ndim != 3:
-        raise ValueError(f"Invalid Zarr data shape {data.shape}: expected 3-D (height, width, n_spectral)")
+        # Clean up transient backend/UI state accidentally saved in older versions
+        exclude_keys = ["live_update"]
+        if isinstance(metadata, dict):
+            metadata = {k: v for k, v in metadata.items() if k not in exclude_keys}
 
-    if format_version >= 2:
-        img_height, img_width, n_spectral = data.shape
-    else:
-        # legacy v1 stored as (width, height, spectral)
-        img_width, img_height, n_spectral = data.shape
-    cube = np.ascontiguousarray(data[:])
+        spatial_grid = decode_dict(root.attrs.get("spatial_grid", {}))
 
-    if format_version < 2:
-        cube = np.ascontiguousarray(np.transpose(cube, (1, 0, 2)))
-
-    if root["data/x"].shape[0] != n_spectral:
-        raise ValueError(
-            "Invalid Zarr spectral axis length: "
-            f"x has length {root['data/x'].shape[0]} while data has {n_spectral} spectral channels"
+        spectral_map = SpectralMap(
+            metadata=metadata,
+            x=root["data/x"][:],
+            x_axis_unit=parse_xunit(root["data"].attrs.get("x_axis_unit", root["data"].attrs.get("x_unit"))),
+            data_unit=root["data"].attrs.get("data_unit", root["data"].attrs.get("y_unit")),
+            roi_x=read_attr_array(root["data"], "roi_x"),
+            data=cube.reshape(img_height * img_width, n_spectral),
+            ignore_sort=True,
+            name=root.attrs.get("name"),
+            img_width=img_width,
+            img_height=img_height,
+            spatial_grid=spatial_grid,
+            masks=masks,
+            masks_group=mask_groups,
+            images=images,
+            images_group=image_groups,
+            spectra=spectra,
+            history=history,
         )
 
-    history = decode_dict(root.attrs.get("history", {}))
+        if format_version < 2:
+            target_shape = spectral_map.map_shape
+            for mask in spectral_map.masks.values():
+                _align_legacy_mask(mask, target_shape=target_shape)
+            for image in spectral_map.images.values():
+                _align_legacy_image(image, target_shape=target_shape)
 
-    metadata = decode_dict(root.attrs.get("metadata", "{}"))
+        spectral_map.images.ordered_keys = root["images"].attrs.get("key_order", list(spectral_map.images.keys()))
+        spectral_map.masks.ordered_keys = root["masks"].attrs.get("key_order", list(spectral_map.masks.keys()))
+        if "groups_order" in root["images"].attrs:
+            spectral_map.images_group.ordered_keys = root["images"].attrs["groups_order"]
+        if "groups_order" in root["masks"].attrs:
+            spectral_map.masks_group.ordered_keys = root["masks"].attrs["groups_order"]
 
-    # Clean up transient backend/UI state accidentally saved in older versions
-    exclude_keys = ["live_update"]
-    if isinstance(metadata, dict):
-        metadata = {k: v for k, v in metadata.items() if k not in exclude_keys}
-
-    spatial_grid = decode_dict(root.attrs.get("spatial_grid", {}))
-
-    spectral_map = SpectralMap(
-        metadata=metadata,
-        x=root["data/x"][:],
-        x_axis_unit=parse_xunit(root["data"].attrs.get("x_axis_unit", root["data"].attrs.get("x_unit"))),
-        data_unit=root["data"].attrs.get("data_unit", root["data"].attrs.get("y_unit")),
-        roi_x=read_attr_array(root["data"], "roi_x"),
-        data=cube.reshape(img_height * img_width, n_spectral),
-        ignore_sort=True,
-        name=root.attrs.get("name"),
-        img_width=img_width,
-        img_height=img_height,
-        spatial_grid=spatial_grid,
-        masks=masks,
-        masks_group=mask_groups,
-        images=images,
-        images_group=image_groups,
-        spectra=spectra,
-        history=history,
-    )
-
-    if format_version < 2:
-        target_shape = spectral_map.map_shape
-        for mask in spectral_map.masks.values():
-            _align_legacy_mask(mask, target_shape=target_shape)
-        for image in spectral_map.images.values():
-            _align_legacy_image(image, target_shape=target_shape)
-
-    spectral_map.images.ordered_keys = root["images"].attrs.get("key_order", list(spectral_map.images.keys()))
-    spectral_map.masks.ordered_keys = root["masks"].attrs.get("key_order", list(spectral_map.masks.keys()))
-    if "groups_order" in root["images"].attrs:
-        spectral_map.images_group.ordered_keys = root["images"].attrs["groups_order"]
-    if "groups_order" in root["masks"].attrs:
-        spectral_map.masks_group.ordered_keys = root["masks"].attrs["groups_order"]
-
-    store.close()
-    return spectral_map
+        return spectral_map
+    finally:
+        store.close()
 
 
 def read_zarr_metadata_only(filepath_or_buffer):
@@ -191,28 +193,30 @@ def read_zarr_metadata_only(filepath_or_buffer):
         store = LocalStore(filepath_or_buffer)
     else:
         store = ZipStore(filepath_or_buffer, mode="r")
-    root: Any = zarr.open(store=store, mode="r")
+    try:
+        root: Any = zarr.open(store=store, mode="r")
 
-    data = root["data/data"]
-    format_version = int(root.attrs.get("format_version", 1))
-    if data.ndim != 3:
-        raise ValueError(f"Invalid Zarr data shape {data.shape}: expected 3-D")
+        data = root["data/data"]
+        format_version = int(root.attrs.get("format_version", 1))
+        if data.ndim != 3:
+            raise ValueError(f"Invalid Zarr data shape {data.shape}: expected 3-D")
 
-    if format_version >= 2:
-        img_height, img_width, spectral_size = data.shape
-    else:
-        # legacy v1 stored as (width, height, spectral)
-        img_width, img_height, spectral_size = data.shape
+        if format_version >= 2:
+            img_height, img_width, spectral_size = data.shape
+        else:
+            # legacy v1 stored as (width, height, spectral)
+            img_width, img_height, spectral_size = data.shape
 
-    metadata = {
-        "name": decode_dict(root.attrs.get("name")),
-        "created": decode_dict(root.attrs.get("created")),
-        "img_width": img_width,
-        "img_height": img_height,
-        "spectral_size": spectral_size,
-        "thumbnail": decode_dict(root.attrs.get("thumbnail")),
-        "format_version": format_version,
-    }
+        metadata = {
+            "name": decode_dict(root.attrs.get("name")),
+            "created": decode_dict(root.attrs.get("created")),
+            "img_width": img_width,
+            "img_height": img_height,
+            "spectral_size": spectral_size,
+            "thumbnail": decode_dict(root.attrs.get("thumbnail")),
+            "format_version": format_version,
+        }
 
-    store.close()
-    return metadata
+        return metadata
+    finally:
+        store.close()

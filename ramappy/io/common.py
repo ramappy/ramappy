@@ -7,6 +7,7 @@ format-specific readers and writers registered in [ramappy.io.core][].
 
 from __future__ import annotations
 
+import logging
 import os
 import shutil
 from io import BytesIO
@@ -24,6 +25,8 @@ from ramappy.io.core import (
     SpectrumType,
 )
 from ramappy.io.csv import write_csv_spectrum
+
+logger = logging.getLogger(__name__)
 
 
 def guess_file_type(filename: str) -> InputFormat:
@@ -61,7 +64,7 @@ def guess_file_type(filename: str) -> InputFormat:
                     if fmt.sniffer(filename):
                         return fmt
                 except Exception:
-                    pass
+                    logger.debug("Input format sniffer failed for %s", fmt.format_name, exc_info=True)
 
         # Fallback if no sniffer matches:
         # prefer the generic format (without sniffer), e.g., `hdf5` over a specific flavour.
@@ -106,7 +109,7 @@ def read_file(
     if format == "auto":  # and isinstance(filepath_or_buffer, str)
         format_obj = guess_file_type(filepath_or_buffer)
         if format_obj is None:
-            raise ValueError
+            raise ValueError(f"Could not determine the input format for {filepath_or_buffer!r}.")
         format_name = format_obj.format_name
     else:
         format_name = format

@@ -61,8 +61,6 @@ class Pipeline:
         data = {
             "input_format": self.input_format,
             "input_params": self.input_params,
-            # mode="json" invokes each field's JSON serializer (e.g., NumpyArrayROI -> list),
-            # keeping the dump plain-YAML-safe instead of falling back to unsafe !!python tags
             "steps": [s.model_dump(mode="json") for s in self.steps],
         }
         res = yaml.safe_dump(data, allow_unicode=True, default_flow_style=False)

@@ -8,6 +8,7 @@ from io import BytesIO
 from types import ModuleType
 
 import numpy as np
+import pytest
 import zarr
 from PIL import Image
 
@@ -120,6 +121,27 @@ def test_read_file_sets_zarr_input_when_history_input_missing(tmp_path):
 
     assert loaded.history.input is not None
     assert loaded.history.input["format_name"] == "zarr"
+
+@pytest.mark.parametrize("reader_name", ["read_zarr", "read_zarr_metadata_only"])
+def test_zarr_reader_closes_store_when_open_fails(monkeypatch, reader_name):
+    closed = False
+
+    class FakeStore:
+        def close(self):
+            nonlocal closed
+            closed = True
+
+    monkeypatch.setattr(_zarr_reader, "ZipStore", lambda *_args, **_kwargs: FakeStore())
+
+    def fail_open(*_args, **_kwargs):
+        raise ValueError("invalid zarr")
+
+    monkeypatch.setattr(_zarr_reader.zarr, "open", fail_open)
+
+    with pytest.raises(ValueError, match="invalid zarr"):
+        getattr(_zarr_reader, reader_name)("not-a-directory.zarr.zip")
+
+    assert closed
 
 
 def test_zarr_v2_roundtrip_preserves_cube_and_spatial_grid(tmp_path):

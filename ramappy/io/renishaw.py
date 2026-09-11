@@ -4,7 +4,7 @@ from typing import Any, Literal
 import numpy as np
 import PIL.Image
 from renishawWiRE import WDFReader
-from renishawWiRE.types import UnitType
+from renishawWiRE.types import MeasurementType, UnitType
 
 from ramappy.core import SpectralMap, Spectrum
 from ramappy.core.images2d import Image2D, SpatialGrid
@@ -79,16 +79,11 @@ def _build_renishaw_metadata(reader, filepath_or_buffer):
     )
 
 
-def _calc_crop_box(reader, ph, pw):
+def _calc_crop_box(reader, ph, pw, x_pad, y_pad):
     """Get image crop box"""
 
     w_, h_ = reader.img_dimensions
     x0_, y0_ = reader.img_origins
-
-    x_unique = np.unique(reader.xpos)
-    x_pad = float(np.abs(np.diff(x_unique)).mean()) if len(x_unique) > 1 else float(reader.map_info.get("x_pad", 1))
-    y_unique = np.unique(reader.ypos)
-    y_pad = float(np.abs(np.diff(y_unique)).mean()) if len(y_unique) > 1 else float(reader.map_info.get("y_pad", 1))
 
     map_xl = reader.xpos.min() - x_pad / 2
     map_xr = reader.xpos.max() + x_pad / 2
@@ -101,6 +96,35 @@ def _calc_crop_box(reader, ph, pw):
     bottom = int(ph * (map_yb - y0_) / h_)
 
     return (left, top, right, bottom)
+
+
+def _compute_stage_padding(reader):
+    """Physical spacing between adjacent stage positions along X and Y.
+
+    Falls back to the nominal WMAP padding when there is only one distinct
+    position along an axis (e.g., a line scan along the other axis).
+    """
+    x_unique = np.unique(reader.xpos)
+    x_pad = float(np.abs(np.diff(x_unique)).mean()) if len(x_unique) > 1 else float(reader.map_info.get("x_pad", 1))
+    y_unique = np.unique(reader.ypos)
+    y_pad = float(np.abs(np.diff(y_unique)).mean()) if len(y_unique) > 1 else float(reader.map_info.get("y_pad", 1))
+    return x_pad, y_pad
+
+
+def _extract_white_light_image(reader, x_pad, y_pad):
+    """Return the cropped white-light image aligned to the map, if present."""
+    if reader.img is None:
+        return None
+
+    img = PIL.Image.open(reader.img)
+    return {
+        "white_light": Image2D(
+            image=img.crop(box=_calc_crop_box(reader, img.height, img.width, x_pad, y_pad)),
+            locked=True,
+            name="White Light",
+            visible=False,
+        )
+    }
 
 
 class RenishawWDFInputParams(IOParams, IOParamsAsHsi):
@@ -129,70 +153,73 @@ def read_renishaw_wdf(filepath_or_buffer, *, as_hsi: bool = True):
     """
     reader: Any = WDFReader(filepath_or_buffer)
 
-    if as_hsi and reader.measurement_type == 3:
+    x_axis_unit = assign_unit(reader.xlist_unit, var="x")
+    data_unit = assign_unit(reader.spectral_unit, var="data")
+    metadata = _build_renishaw_metadata(reader, filepath_or_buffer)
+
+    if not as_hsi:
+        return Spectrum(
+            x=reader.xdata,
+            data=reader.spectra,
+            name=reader.title,
+            x_axis_unit=x_axis_unit,
+            data_unit=data_unit,
+            metadata=metadata,
+        )
+
+    spectra_array = np.asarray(reader.spectra)
+
+    if reader.measurement_type == MeasurementType.Mapping and hasattr(reader, "map_shape"):
         # WDFReader does not currently handle different scan patterns (just assumes everything is `raster`)!
         xpos = ((reader.xpos - reader.xpos[0]) / reader.map_info["x_pad"]).round().astype(int)
         ypos = ((reader.ypos - reader.ypos[0]) / reader.map_info["y_pad"]).round().astype(int)
-        img_width, img_height = reader.map_shape
-
-        if reader.is_completed:
-            reader.spectra = reader.spectra[ypos, xpos, :]
-            mask_idxs = None
-        else:
-            spectra = np.zeros((*reader.map_shape, len(reader.xdata)), dtype=reader.spectra.dtype)
-            spectra[xpos, ypos, :] = reader.spectra
-            reader.spectra = spectra.reshape(-1, len(reader.xdata))
-
-            mask_idxs = np.ravel_multi_index((xpos, ypos), reader.map_shape)
-
-            # why do I need this??
-            reader.map_shape = (reader.map_shape[1], reader.map_shape[0])
-            img_width, img_height = img_height, img_width
-
-        images = None
-        if reader.img is not None:
-            img = PIL.Image.open(reader.img)
-
-            images = {
-                "white_light": Image2D(
-                    image=img.crop(box=_calc_crop_box(reader, img.height, img.width)),
-                    locked=True,
-                    name="White Light",
-                    visible=False,
-                )
-            }
-
+        stage_x_pad, stage_y_pad = _compute_stage_padding(reader)
         spatial_unit = assign_unit(reader.map_info["x_unit"], var="spatial").unit
+        images = _extract_white_light_image(reader, stage_x_pad, stage_y_pad)
 
-        x_unique = np.unique(reader.xpos)
-        x_pad = float(np.abs(np.diff(x_unique)).mean()) if len(x_unique) > 1 else float(reader.map_info.get("x_pad", 1))
+        if spectra_array.ndim == 3:
+            # Fully-measured 2-D raster (more than one row and one column): WDFReader
+            # already reshaped it into (rows, cols, points), assuming raster
+            # acquisition order. Re-index by the true stage positions to correct
+            # for a non-raster (e.g., bidirectional/snake) scan pattern.
+            img_width, img_height = reader.map_shape
+            data = spectra_array[ypos, xpos, :]
+            mask_idxs = None
+            # By convention, pixel_size should match (row_size, col_size) -> (y_pad, x_pad).
+            spatial_grid = SpatialGrid(pixel_size_y=stage_y_pad, pixel_size_x=stage_x_pad, spatial_unit=spatial_unit)
+        else:
+            # Partial acquisition, or a degenerate 1xN / Nx1 line/point scan: WDFReader
+            # only produces the 3-D reshape above for a complete grid with more than
+            # one row and column, so rebuild the raster manually from the true stage
+            # positions instead.
+            spectra_w, spectra_h = reader.map_shape
+            n_points = len(reader.xdata)
+            flat_spectra = spectra_array.reshape(-1, n_points)
 
-        y_unique = np.unique(reader.ypos)
-        y_pad = float(np.abs(np.diff(y_unique)).mean()) if len(y_unique) > 1 else float(reader.map_info.get("y_pad", 1))
+            grid = np.zeros((spectra_w, spectra_h, n_points), dtype=flat_spectra.dtype)
+            grid[xpos, ypos, :] = flat_spectra
+            data = grid.reshape(-1, n_points)
 
-        # WDFReader maps Y as first dim (rows) and X as second (cols) or vice-versa?
-        # Above we have reader.spectra = spectra.reshape(-1, len(reader.xdata))
-        # and reader.map_shape = (reader.map_shape[1], reader.map_shape[0])
-        # By convention, pixel_size should match (row_size, col_size) -> (y_pad, x_pad)
-        pixel_size = (y_pad, x_pad)
-
-        spatial_grid = SpatialGrid(
-            pixel_size_y=float(pixel_size[0]),
-            pixel_size_x=float(pixel_size[1]),
-            spatial_unit=spatial_unit,
-        )
+            # WDFReader maps Y as first dim (rows) and X as second (cols) or vice-versa?
+            # The manual grid above is laid out (x, y, points), so flattening it swaps
+            # which axis is "rows" (img_height) vs "columns" (img_width), and the
+            # physical pixel size must follow the same swap.
+            img_height, img_width = spectra_w, spectra_h
+            fully_measured = flat_spectra.shape[0] == spectra_w * spectra_h
+            mask_idxs = None if fully_measured else np.ravel_multi_index((xpos, ypos), (spectra_w, spectra_h))
+            spatial_grid = SpatialGrid(pixel_size_y=stage_x_pad, pixel_size_x=stage_y_pad, spatial_unit=spatial_unit)
 
         spectral_map = SpectralMap(
             x=reader.xdata,
-            data=reader.spectra,
+            data=data,
             img_width=img_width,
             img_height=img_height,
             images=images,
-            x_axis_unit=assign_unit(reader.xlist_unit, var="x"),
-            data_unit=assign_unit(reader.spectral_unit, var="data"),
+            x_axis_unit=x_axis_unit,
+            data_unit=data_unit,
             spatial_grid=spatial_grid,
             name=reader.title,
-            metadata=_build_renishaw_metadata(reader, filepath_or_buffer),
+            metadata=metadata,
         )
 
         if mask_idxs is not None:
@@ -204,12 +231,19 @@ def read_renishaw_wdf(filepath_or_buffer, *, as_hsi: bool = True):
             )
 
         return spectral_map
-    # elif reader.measurement_type == 1 or reader.measurement_type == 2:
-    return Spectrum(
+
+    # Single spectrum or series/time acquisitions have no spatial grid: expose the
+    # acquired spectra as a 1-row pseudo map so RamApp — which only supports
+    # SpectralMap for HSI data — can open it instead of crashing.
+    n_points = len(reader.xdata)
+    data = spectra_array.reshape(-1, n_points)
+    return SpectralMap(
         x=reader.xdata,
-        data=reader.spectra,
+        data=data,
+        img_width=data.shape[0],
+        img_height=1,
+        x_axis_unit=x_axis_unit,
+        data_unit=data_unit,
         name=reader.title,
-        x_axis_unit=assign_unit(reader.xlist_unit, var="x"),
-        data_unit=assign_unit(reader.spectral_unit, var="data"),
-        metadata=_build_renishaw_metadata(reader, filepath_or_buffer),
+        metadata=metadata,
     )
