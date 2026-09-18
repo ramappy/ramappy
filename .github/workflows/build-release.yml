@@ -3,7 +3,7 @@ name: Build and Release Python Package
 on:
   push:
     tags:
-      - 'v*.*.*'
+      - 'v*'
 
 jobs:
   release:
@@ -11,14 +11,17 @@ jobs:
     runs-on: ubuntu-latest
 
     permissions:
-      contents: write  # needed to upload release assets
+      contents: write  # needed to create GitHub Release and upload assets
+      id-token: write  # needed for PyPI Trusted Publishing
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Install uv
-        uses: astral-sh/setup-uv@v3
+        uses: astral-sh/setup-uv@v5
         with:
           enable-cache: true
           cache-dependency-glob: "pyproject.toml"
@@ -26,13 +29,32 @@ jobs:
       - name: Set up Python
         run: uv python install 3.13
 
+      - name: Install dependencies
+        run: uv sync --locked --all-groups --all-extras --dev
+
+      - name: Run tests
+        run: uv run pytest
+
       - name: Build distribution packages
         run: uv build
+
+      - name: Check distribution packages
+        run: uvx --from twine twine check dist/*
+
+      - name: Publish to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          packages-dir: dist/
+          skip-existing: true
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ github.ref_name }}
+          name: ${{ github.ref_name }}
+          generate_release_notes: true
+          draft: false
+          prerelease: ${{ contains(github.ref_name, 'alpha') || contains(github.ref_name, 'beta') || contains(github.ref_name, 'rc') || contains(github.ref_name, 'dev') }}
           files: |
             dist/*.whl
             dist/*.tar.gz

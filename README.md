@@ -5,6 +5,7 @@
 # ramappy
 
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
+[![PyPI version](https://img.shields.io/pypi/v/ramappy.svg)](https://pypi.org/project/ramappy/)
 [![CI](https://github.com/ramappy/ramappy/actions/workflows/ci.yml/badge.svg)](https://github.com/ramappy/ramappy/actions)
 
 `ramappy` is a Python toolkit for hyperspectral spectroscopy processing and analysis,
@@ -42,8 +43,15 @@ The codebase is organized around a few stable layers:
 
 ## Installation
 
-`ramappy` is not yet published on PyPI; install it directly from Git with [uv](https://docs.astral.sh/uv/)
-(recommended) or `pip`:
+Install the latest release from PyPI with [uv](https://docs.astral.sh/uv/) (recommended) or `pip`:
+
+```bash
+uv add ramappy
+# or
+pip install ramappy
+```
+
+For the unreleased development version, install directly from Git:
 
 ```bash
 uv add git+https://github.com/ramappy/ramappy.git
@@ -51,8 +59,7 @@ uv add git+https://github.com/ramappy/ramappy.git
 pip install git+https://github.com/ramappy/ramappy.git
 ```
 
-To pin to a specific commit, tag, or branch, append `@<ref>` to the URL, e.g.,
-`git+https://github.com/ramappy/ramappy.git@v0.1.0`.
+To install optional pandas export support, use `ramappy[pandas]`.
 
 ## Core abstractions
 
