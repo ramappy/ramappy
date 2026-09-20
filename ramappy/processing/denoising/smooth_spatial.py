@@ -98,14 +98,10 @@ def smooth_spatial(
                 mode=boundary_mode,
             )
     elif method == "gaussian":
-        spectral_map.data[idxs] = spectral_map.apply_func(
-            gaussian_filter,
-            data=spectral_map.data[idxs],
-            by="map",
-            flatten=True,
-            parallel="threads",
-            # actiual params for gaussian_filter
-            sigma=sigma,
-        )
+        # apply the filter to the whole (H, W, N) cube at once (sigma=0 along the spectral axis)
+        # instead of looping channel-by-channel
+        cube = spectral_map.data[idxs].reshape(spectral_map.img_height, spectral_map.img_width, -1)
+        filtered = gaussian_filter(cube, sigma=(sigma, sigma, 0))
+        spectral_map.data[idxs] = filtered.reshape(spectral_map.img_height * spectral_map.img_width, -1)
     else:
         raise ValueError("Method not recognized")
