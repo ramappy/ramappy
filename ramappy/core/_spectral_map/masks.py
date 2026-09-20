@@ -124,6 +124,9 @@ class _SpectralMapMasksMixin:
         op: Literal["diff", "union", "intersection"] = "diff",
     ) -> Mask:
         """Perform a binary operation between two masks."""
+        if isinstance(mask_c, str) and mask_c == "0":
+            raise ValueError("Cannot overwrite default selection mask.")
+
         mask_a_obj = mask_a if isinstance(mask_a, Mask) else self.get_mask(mask_a)
         mask_b_obj = mask_b if isinstance(mask_b, Mask) else self.get_mask(mask_b)
 
@@ -181,11 +184,11 @@ class _SpectralMapMasksMixin:
         color = (img.viz_rules.cmap if img.viz_rules is not None else None) or color_generator()
         if relative:
             img_min, img_max = img.data_range  # type: ignore
-            threshold_down = img_min + threshold_down * (img_max - img_min) if threshold_down else None
-            threshold_up = img_min + threshold_up * (img_max - img_min) if threshold_up else None
+            threshold_down = img_min + threshold_down * (img_max - img_min) if threshold_down is not None else None
+            threshold_up = img_min + threshold_up * (img_max - img_min) if threshold_up is not None else None
 
-        mask_down = (img.data <= threshold_down) if threshold_down else False
-        mask_up = (img.data >= threshold_up) if threshold_up else False
+        mask_down = (img.data <= threshold_down) if threshold_down is not None else False
+        mask_up = (img.data >= threshold_up) if threshold_up is not None else False
         mask = np.flatnonzero((mask_down | mask_up) if not invert else (~mask_down & ~mask_up))
 
         return self.new_mask(mask, name=img.name, color=color)
