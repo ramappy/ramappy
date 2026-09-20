@@ -47,7 +47,7 @@ class PipelineError(Exception):
 
     def _get_schema_str(self) -> str:
         if self.model and issubclass(self.model, BaseModel):
-            schema = self.model.schema()
+            schema = self.model.model_json_schema()
             # Show only properties and their types/allowed values
             props = schema.get("properties", {})
             required = set(schema.get("required", []))
