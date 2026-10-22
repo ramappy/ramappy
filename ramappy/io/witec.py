@@ -283,7 +283,7 @@ class WITec:
                 data = data_block["TDGraph"]["GraphData"]["Data"]  # dict with info to read actual data
                 dtype = data_block["TDGraph"]["GraphData"]["DataType"]
                 if dtype <= 0 or dtype > 10:
-                    raise ValueError(f"Unkown data type {dtype}")
+                    raise ValueError(f"Unknown data type {dtype}")
                 dtype = DATA_TYPE_MAPPING[dtype]
 
                 self._fid.seek(data["start_pos"])

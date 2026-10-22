@@ -151,33 +151,41 @@ def edit_image(
 
     if key in spectral_map.images:
         # modify/delete already existing image (if possible)
-        if data_rules is not None and spectral_map.images[key].data_rules is not None:
-            spectral_map.images[key] = spectral_map.intensity_map(data_rules=data_rules, viz_rules=viz_rules)
-        elif viz_rules is not None:
-            if spectral_map.images[key].viz_rules is not None:
-                spectral_map.images[key].viz_rules.update(viz_rules)  # type: ignore
-            else:
-                spectral_map.images[key].viz_rules = viz_rules
-        elif locked is not None:
-            if spectral_map.images[key].data_rules is not None:
-                spectral_map.images[key].locked = locked
-                spectral_map.update_image(key)
-        elif name is not None:
-            spectral_map.images[key].name = name
-            if spectral_map.images[key].spectrum is not None:
-                spectral_map.images[key].spectrum.name = spectral_map.images[key].name  # type: ignore
-        elif visible is not None:
-            spectral_map.images[key].visible = visible
-        else:
+        img = spectral_map.images[key]
+        if data_rules is None and viz_rules is None and locked is None and name is None and visible is None:
             spectral_map.delete_image(key)
+        else:
+            # apply each provided field independently instead of an elif chain, so e.g. passing
+            # `data_rules` for an image without existing data_rules no longer falls through to delete
+            viz_rules_applied = False
+            if data_rules is not None and img.data_rules is not None:
+                spectral_map.images[key] = spectral_map.intensity_map(data_rules=data_rules, viz_rules=viz_rules)
+                img = spectral_map.images[key]
+                viz_rules_applied = viz_rules is not None
+            if viz_rules is not None and not viz_rules_applied:
+                if img.viz_rules is not None:
+                    img.viz_rules.update(viz_rules)  # type: ignore
+                else:
+                    img.viz_rules = viz_rules
+            if locked is not None and img.data_rules is not None:
+                img.locked = locked
+                spectral_map.update_image(key)
+            if name is not None:
+                img.name = name
+                if img.spectrum is not None:
+                    img.spectrum.name = img.name  # type: ignore
+            if visible is not None:
+                img.visible = visible
 
     elif key in spectral_map.images_group:
-        if name is not None:
-            spectral_map.images_group[key].name = name
-        elif visible is not None:
-            spectral_map.images_group[key].visible = visible
-        else:
+        group = spectral_map.images_group[key]
+        if name is None and visible is None:
             spectral_map.delete_images_group(key)
+        else:
+            if name is not None:
+                group.name = name
+            if visible is not None:
+                group.visible = visible
     elif keys_order is not None:
         spectral_map.images.set_order(keys_order)
         if group_key in spectral_map.images_group and set(new_order) == set(

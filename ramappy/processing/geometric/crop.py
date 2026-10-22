@@ -1,4 +1,5 @@
 import numpy as np
+from pydantic import ConfigDict
 
 from ramappy import const
 from ramappy.core import SpectralMap
@@ -13,6 +14,9 @@ from ramappy.core.pipeline import (
 class StepCropSpatialParams(StepParams):
     """Parameters for `crop_spatial`."""
 
+    # Pipelines saved before images became always-cropped may still carry `crop_images`.
+    model_config = ConfigDict(extra="ignore")
+
     row_start: int
     """Starting row index for cropping (inclusive)."""
 
@@ -24,9 +28,6 @@ class StepCropSpatialParams(StepParams):
 
     col_end: int
     """Ending column index for cropping (exclusive)."""
-
-    crop_images: bool = True
-    """Whether to crop all the project images. If False, images will not be cropped."""
 
 
 @pipeline_step(
@@ -42,7 +43,6 @@ def crop_spatial(
     row_end: int | None = None,
     col_start: int | None = None,
     col_end: int | None = None,
-    crop_images: bool = True,
 ):
     """Crop the spectral map to the provided rectangle.
 
@@ -56,6 +56,9 @@ def crop_spatial(
 
     Notes
     -----
+    Every image (numeric or raster) is cropped with the map, because images have no
+    offset of their own and would otherwise fall out of register.
+    Raster images of a different resolution are cropped proportionally.
     This operation is **irreversible** - the original map data is modified in-place.
     """
     row_start = row_start if row_start is not None else 0
@@ -80,33 +83,25 @@ def crop_spatial(
     for im_name, im in spectral_map.images.items():
         if hasattr(im, "data") and im.data is not None:
             spectral_map.images[im_name].data = im.data[row_start:row_end, col_start:col_end]
-        elif crop_images and im._image is not None:
-            pil_img = im._image  # im._image is not None here
-            pil_w, pil_h = pil_img.size  # PIL: (width, height)
-            if (pil_h, pil_w) == spectral_map.map_shape:
-                spectral_map.images[im_name]._image = im._image.crop(
-                    (
-                        col_start,
-                        row_start,
-                        col_end,
-                        row_end,
-                    )
-                )
-            else:
-                res_x = pil_w / spectral_map.img_width  # horizontal (column) scaling
-                res_y = pil_h / spectral_map.img_height  # vertical (row) scaling
-                left = round(col_start * res_x)
-                right = round(col_end * res_x)
-                top = round(row_start * res_y)
-                bottom = round(row_end * res_y)
-
-                spectral_map.images[im_name]._image = im._image.crop((left, top, right, bottom))
+        elif im._image is not None:
+            pil_w, pil_h = im._image.size  # PIL: (width, height)
+            res_x = pil_w / spectral_map.img_width  # horizontal (column) scaling
+            res_y = pil_h / spectral_map.img_height  # vertical (row) scaling
+            box = (
+                round(col_start * res_x),
+                round(row_start * res_y),
+                round(col_end * res_x),
+                round(row_end * res_y),
+            )
+            spectral_map.images[im_name]._image = im._image.crop(box)
 
     # crop aux_data (if any)
     for aux_name, aux_data in spectral_map.aux_data.items():
         cube = aux_data.reshape(spectral_map.img_height, spectral_map.img_width, aux_data.shape[const.Axis.SPECTRAL])
         cube = cube[row_start:row_end, col_start:col_end, :]
-        spectral_map.aux_data[aux_name] = cube.reshape(img_width_new * img_height_new, spectral_map.x_size)
+        spectral_map.aux_data[aux_name] = cube.reshape(
+            img_width_new * img_height_new, aux_data.shape[const.Axis.SPECTRAL]
+        )
 
     cube = spectral_map.cube
     cube = cube[row_start:row_end, col_start:col_end, :]

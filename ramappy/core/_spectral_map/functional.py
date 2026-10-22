@@ -40,7 +40,8 @@ def _apply_rows(
     """Apply *func* to each row of *data*, with optional joblib parallelism."""
     n_items = len(data)
     if n_items == 0:
-        return np.array([], dtype=output_dtype)
+        # preserve trailing dims (e.g., spectral length) so callers can safely assign into (0, N) slices
+        return np.empty((0, *data.shape[1:]), dtype=output_dtype)
 
     # Heuristic: joblib dispatch overhead dominates for small workloads.
     # Keep the threshold conservative so expensive per-item functions still benefit.

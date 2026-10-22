@@ -214,7 +214,8 @@ def read_csv(
     img = np.rot90(img, k=1, axes=(0, 1))
     img = np.flipud(img)
 
-    intensities = img.reshape(img_height * img_width, -1)
+    n_spectral = intensities.shape[-1]
+    intensities = img.reshape(-1, n_spectral)
 
     return SpectralMap(
         x=x,
