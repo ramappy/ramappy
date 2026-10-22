@@ -93,7 +93,7 @@ def smooth_spatial(
                 by="map",
                 flatten=True,
                 parallel="threads",
-                # actiual params for median_filter
+                # actual params for median_filter
                 size=size,
                 mode=boundary_mode,
             )
