@@ -5,23 +5,23 @@ on:
     tags:
       - 'v*'
 
-jobs:
-  release:
-    name: Create Tagged Release
-    runs-on: ubuntu-latest
+permissions: {}
 
+jobs:
+  build:
+    name: Test and Build Distribution
+    runs-on: ubuntu-latest
     permissions:
-      contents: write  # needed to create GitHub Release and upload assets
-      id-token: write  # needed for PyPI Trusted Publishing
+      contents: read
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           fetch-depth: 0
 
       - name: Install uv
-        uses: astral-sh/setup-uv@v5
+        uses: astral-sh/setup-uv@v10
         with:
           enable-cache: true
           cache-dependency-glob: "pyproject.toml"
@@ -30,7 +30,7 @@ jobs:
         run: uv python install 3.13
 
       - name: Install dependencies
-        run: uv sync --locked --all-groups --all-extras --dev
+        run: uv sync --all-groups --all-extras
 
       - name: Run tests
         run: uv run pytest
@@ -41,22 +41,58 @@ jobs:
       - name: Check distribution packages
         run: uvx --from twine twine check dist/*
 
+      - name: Upload distribution packages
+        uses: actions/upload-artifact@v7
+        with:
+          name: python-distributions
+          path: dist/
+          if-no-files-found: error
+          retention-days: 7
+
+  publish-pypi:
+    name: Publish to PyPI
+    runs-on: ubuntu-latest
+    needs: build
+    environment:
+      name: pypi
+      url: https://pypi.org/p/ramappy
+    permissions:
+      id-token: write
+
+    steps:
+      - name: Download distribution packages
+        uses: actions/download-artifact@v8
+        with:
+          name: python-distributions
+          path: dist/
+
       - name: Publish to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
           packages-dir: dist/
-          skip-existing: true
+
+  create-github-release:
+    name: Create Tagged Release
+    runs-on: ubuntu-latest
+    needs: [build, publish-pypi]
+    permissions:
+      contents: write
+
+    steps:
+      - name: Download distribution packages
+        uses: actions/download-artifact@v8
+        with:
+          name: python-distributions
+          path: dist/
 
       - name: Create GitHub Release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           tag_name: ${{ github.ref_name }}
           name: ${{ github.ref_name }}
           generate_release_notes: true
-          draft: false
+          draft: true
           prerelease: ${{ contains(github.ref_name, 'alpha') || contains(github.ref_name, 'beta') || contains(github.ref_name, 'rc') || contains(github.ref_name, 'dev') }}
           files: |
             dist/*.whl
             dist/*.tar.gz
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
