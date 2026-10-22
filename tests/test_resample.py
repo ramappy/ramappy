@@ -114,3 +114,64 @@ def test_step_resample_params_pydantic_model():
 
     with pytest.raises(ValueError, match="Exactly one of 'spectrum_step' or 'ref_spectrum_id'"):
         StepResampleParams(spectrum_step=1.0, ref_spectrum_id="my_ref")
+
+
+def test_resample_whittaker_and_spline_with_roi_x_1d_and_2d():
+    x = np.linspace(100.0, 300.0, 21)
+    data = np.ones((2, 21), dtype=float)
+
+    # 1D roi_x with spectrum_step
+    smap_spline = SpectralMap(x=x.copy(), data=data.copy(), img_width=2, img_height=1)
+    resample(smap_spline, method="spline", spectrum_step=10.0, roi_x=[120.0, 200.0])
+    assert len(smap_spline.x) == 9
+    assert smap_spline.x[0] == pytest.approx(120.0)
+    assert smap_spline.x[-1] == pytest.approx(200.0)
+
+    smap_whittaker = SpectralMap(x=x.copy(), data=data.copy(), img_width=2, img_height=1)
+    resample(smap_whittaker, method="whittaker", spectrum_step=10.0, roi_x=[120.0, 200.0])
+    assert len(smap_whittaker.x) == 9
+    assert smap_whittaker.x[0] == pytest.approx(120.0)
+    assert smap_whittaker.x[-1] == pytest.approx(200.0)
+
+    # 2D multi-region roi_x with whittaker
+    smap_multi = SpectralMap(x=x.copy(), data=data.copy(), img_width=2, img_height=1)
+    resample(smap_multi, method="whittaker", spectrum_step=10.0, roi_x=[[120.0, 160.0], [240.0, 280.0]])
+    assert len(smap_multi.x) == 10
+    np.testing.assert_allclose(smap_multi.roi_x, [[120.0, 160.0], [240.0, 280.0]])
+
+
+def test_resample_flat_x_grid_is_restricted_by_roi_x():
+    x = np.linspace(100.0, 300.0, 21)
+    data = np.ones((2, 21), dtype=float)
+    smap = SpectralMap(x=x, data=data, img_width=2, img_height=1)
+
+    resample(smap, method="spline", x_grid=np.linspace(100.0, 300.0, 41), roi_x=[150.0, 250.0])
+    assert smap.x[0] == pytest.approx(150.0)
+    assert smap.x[-1] == pytest.approx(250.0)
+    assert len(smap.x) == 21
+    np.testing.assert_allclose(smap.roi_x, [[150.0, 250.0]])
+
+
+def test_resample_regioned_x_grid_ignores_roi_x():
+    """A grid given as a list of regions already defines its ROIs; roi_x is ignored."""
+    x = np.linspace(100.0, 300.0, 21)
+    data = np.ones((2, 21), dtype=float)
+    smap = SpectralMap(x=x, data=data, img_width=2, img_height=1)
+
+    grid = [np.linspace(100.0, 140.0, 5), np.linspace(240.0, 280.0, 5)]
+    resample(smap, method="spline", x_grid=grid, roi_x=[150.0, 250.0])
+    assert len(smap.x) == 10
+    np.testing.assert_allclose(smap.roi_x, [[100.0, 140.0], [240.0, 280.0]])
+
+
+def test_resample_roi_tol():
+    x = np.linspace(100.0, 200.0, 11)  # step 10
+    grid = np.arange(100.0, 205.1, 5.0)  # overshoots the data by 5
+
+    smap = SpectralMap(x=x, data=np.ones((2, 11)), img_width=2, img_height=1)
+    resample(smap, x_grid=grid)  # default tolerance is one spectral step
+    assert smap.x[-1] == pytest.approx(205.0)
+
+    smap = SpectralMap(x=x, data=np.ones((2, 11)), img_width=2, img_height=1)
+    with pytest.raises(ValueError, match="do not fully match"):
+        resample(smap, x_grid=grid, roi_tol=1.0)

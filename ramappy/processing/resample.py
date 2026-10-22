@@ -6,7 +6,7 @@ from typing import Literal
 
 import numpy as np
 import numpy.typing as npt
-from pydantic import model_validator
+from pydantic import Field, model_validator
 from scipy.interpolate import make_interp_spline
 
 from ramappy import const
@@ -22,7 +22,11 @@ from ramappy.utils import common_roi_overlap, merge_arrays, select_x_indices, wh
 
 
 class StepResampleParams(StepParams, ParamsAcceptRoIX):
-    """Parameters for `resample`."""
+    """Parameters for `resample`.
+
+    The pipeline step takes its target grid from ``spectrum_step`` or ``ref_spectrum_id``
+    only; an explicit ``x_grid`` is available only when calling `resample` directly.
+    """
 
     method: Literal["spline", "whittaker"] = "spline"
     """Resampling method (`"spline"` or `"whittaker"`)."""
@@ -35,6 +39,9 @@ class StepResampleParams(StepParams, ParamsAcceptRoIX):
 
     ref_spectrum_id: str | None = None
     """Identifier of the reference spectrum to use for resampling. If provided, the x-axis of this spectrum will be used as the target grid. Mutually exclusive with ``spectrum_step``."""
+
+    roi_tol: float | None = Field(default=None, gt=0)
+    """Maximum distance the target grid may extend beyond the data ROI, in spectral units. Defaults to one median spectral step."""
 
     @model_validator(mode="after")
     def _check_mutually_exclusive_grid(self) -> StepResampleParams:
@@ -60,6 +67,7 @@ def resample(
     roi_x: npt.ArrayLike | None = None,
     x_grid: npt.ArrayLike | None = None,
     ref_spectrum_id: str | None = None,
+    roi_tol: float | None = None,
 ):
     """Resample spectra onto a new spectral grid.
 
@@ -75,14 +83,39 @@ def resample(
         Step used to build an evenly spaced grid. Mutually exclusive with
         ``ref_spectrum_id`` and ``x_grid``.
     roi_x
-        Target ROI used to restrict or build the target grid when ``spectrum_step`` or ``ref_spectrum_id`` is used.
+        Region(s) of interest, as ``[start, end]`` or a list of such pairs. It
+        selects the range covered by the new grid (see Notes for how it combines
+        with each grid source). Defaults to the current ROI of the data.
     x_grid
-        Explicit per-region spectral grid. Mutually exclusive with
+        Explicit target grid. A flat sequence is a single region; a list of
+        sequences gives one region each. Mutually exclusive with
         ``spectrum_step`` and ``ref_spectrum_id``.
     ref_spectrum_id
         Identifier of the reference spectrum to use for resampling. If provided,
         the x-axis of this spectrum will be used as the target grid. Mutually
         exclusive with ``spectrum_step`` and ``x_grid``.
+    roi_tol
+        Maximum distance the target grid may extend beyond the data ROI, in
+        spectral units. Defaults to one median spectral step.
+
+    Notes
+    -----
+    How ``roi_x`` combines with the grid source:
+
+    - ``spectrum_step``: one evenly spaced grid is built per ROI region.
+    - ``ref_spectrum_id``: the reference x-axis is cut to ``roi_x``, falling back
+      to the reference spectrum's own ROI.
+    - ``x_grid`` as a flat sequence: it carries no region information, so
+      ``roi_x`` selects the regions to keep.
+    - ``x_grid`` as a list of regions: each region defines its own ROI and
+      ``roi_x`` is ignored.
+
+    With ``method='spline'``, target points beyond the data range (by at most
+    ``roi_tol``) take the nearest edge value instead of being extrapolated. A larger
+    overshoot raises ``ValueError``, as does a grid that does not overlap the data ROI.
+
+    With ``method='whittaker'`` the smoothing order is reduced automatically on
+    very short grids.
 
     Raises
     ------
@@ -100,7 +133,7 @@ def resample(
 
     if spectrum_step is not None:
         check_roi = roi_x is not None
-        roi_x_arr = np.asarray(spectral_map.roi_x) if roi_x is None else np.asarray(roi_x)
+        roi_x_arr = np.atleast_2d(spectral_map.roi_x if roi_x is None else roi_x)
         x_grid_list = [np.arange(float(r[0]), float(r[1]) + spectrum_step / 2.0, spectrum_step) for r in roi_x_arr]
     elif ref_spectrum_id is not None:
         check_roi = True
@@ -113,7 +146,7 @@ def resample(
             raise ValueError("ref_spectrum_id is provided but spectral_map is not a SpectralMap instance")
 
         target_roi = roi_x if roi_x is not None else getattr(ref_spec, "roi_x", None)
-        roi_x_arr = np.array([[ref_spec.x[0], ref_spec.x[-1]]]) if target_roi is None else np.asarray(target_roi)
+        roi_x_arr = np.array([[ref_spec.x[0], ref_spec.x[-1]]]) if target_roi is None else np.atleast_2d(target_roi)
         x_indices = select_x_indices(ref_spec.x, roi_x_arr, keep_regions=True)
         if not isinstance(x_indices, list):
             x_indices = [x_indices]
@@ -128,16 +161,29 @@ def resample(
         x_grid_list = (
             [np.asarray(x_grid, dtype=float)] if is_flat_grid else [np.asarray(r, dtype=float) for r in x_grid_arr]
         )
+        # A flat grid carries no region information, so roi_x selects the regions;
+        # a grid given as a list of regions already defines its own ROIs and roi_x is ignored.
+        if is_flat_grid and roi_x is not None:
+            x_flat = x_grid_list[0]
+            x_indices = select_x_indices(x_flat, np.atleast_2d(roi_x), keep_regions=True)
+            if not isinstance(x_indices, list):
+                x_indices = [x_indices]
+            x_grid_list = [x_flat[idx] for idx in x_indices]
+            if len(x_grid_list) == 0 or any(len(g) == 0 for g in x_grid_list):
+                raise ValueError("No overlapping regions of interest")
         roi_x_arr = np.array([[ri[0], ri[-1]] for ri in x_grid_list])
 
     if check_roi:
         roi_x_common = common_roi_overlap(roi_x_arr, spectral_map.roi_x)
         if len(roi_x_common) == 0:
             raise ValueError("No overlapping regions of interest")
-        # Allow endpoints to overshoot the data boundary by up to one mean spectral step.
+        # Allow endpoints to overshoot the data boundary by up to `roi_tol` (default: one median step).
         # Small overruns are safe because the spline branch already clamps out-of-range
         # queries to edge values, so no unphysical extrapolation occurs.
-        delta = np.diff(spectral_map.x).mean() if len(spectral_map.x) > 1 else 1.0
+        if roi_tol is not None:
+            delta = roi_tol
+        else:
+            delta = np.median(np.diff(spectral_map.x)) if len(spectral_map.x) > 1 else 1.0
         if not len(roi_x_arr) == len(roi_x_common) or not np.allclose(
             roi_x_common.ravel(), roi_x_arr.ravel(), atol=delta
         ):
@@ -165,8 +211,9 @@ def resample(
                 )
                 intensities_new[:, old_roi_idx] = spectral_map.data[idxs]
 
+                whittaker_order = min(4, max(1, len(x_merge) - 1))
                 intensities[:, offset : offset + len(x_cur)] = whittaker_smooth(
-                    intensities_new, 0.1, order=4, w=w, x=x_merge
+                    intensities_new, 0.1, order=whittaker_order, w=w, x=x_merge
                 )[:, grid_idx]
 
             elif method == "spline":
