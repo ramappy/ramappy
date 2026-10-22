@@ -1,0 +1,5931 @@
+{
+  "$defs": {
+    "BatchGeneralConfig": {
+      "additionalProperties": true,
+      "properties": {
+        "inject": {
+          "additionalProperties": true,
+          "title": "Inject",
+          "type": "object"
+        },
+        "metadata_reader": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "additionalProperties": {
+                "type": "string"
+              },
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Metadata Reader"
+        }
+      },
+      "title": "BatchGeneralConfig",
+      "type": "object"
+    },
+    "BatchInputConfig": {
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "format": {
+                "const": "csv"
+              }
+            },
+            "required": [
+              "format"
+            ]
+          },
+          "then": {
+            "properties": {
+              "format_params": {
+                "description": "Parameters for reading CSV files.",
+                "properties": {
+                  "as_hsi": {
+                    "default": true,
+                    "title": "As Hsi",
+                    "type": "boolean"
+                  },
+                  "csv_format": {
+                    "default": "wide",
+                    "enum": [
+                      "wide",
+                      "long",
+                      "auto"
+                    ],
+                    "title": "Csv Format",
+                    "type": "string"
+                  },
+                  "data_unit": {
+                    "anyOf": [
+                      {
+                        "maxItems": 2,
+                        "minItems": 2,
+                        "prefixItems": [
+                          {
+                            "type": "string"
+                          },
+                          {
+                            "type": "string"
+                          }
+                        ],
+                        "type": "array"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "default": null,
+                    "title": "Data Unit"
+                  },
+                  "delimiter": {
+                    "anyOf": [
+                      {
+                        "enum": [
+                          "\\t",
+                          "\\s+",
+                          ",",
+                          ";"
+                        ],
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "default": null,
+                    "title": "Delimiter"
+                  },
+                  "has_x_axis": {
+                    "default": true,
+                    "title": "Has X Axis",
+                    "type": "boolean"
+                  },
+                  "header": {
+                    "anyOf": [
+                      {
+                        "type": "integer"
+                      },
+                      {
+                        "const": "infer",
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "default": null,
+                    "title": "Header"
+                  },
+                  "img_height": {
+                    "anyOf": [
+                      {
+                        "type": "integer"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "default": null,
+                    "title": "Img Height"
+                  },
+                  "img_width": {
+                    "anyOf": [
+                      {
+                        "type": "integer"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "default": null,
+                    "title": "Img Width"
+                  },
+                  "invert_x_axis": {
+                    "default": false,
+                    "title": "Invert X Axis",
+                    "type": "boolean"
+                  },
+                  "name": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "default": null,
+                    "title": "Name"
+                  },
+                  "scan_pattern": {
+                    "default": "bidirectional",
+                    "enum": [
+                      "bidirectional",
+                      "raster"
+                    ],
+                    "title": "Scan Pattern",
+                    "type": "string"
+                  },
+                  "x_axis_unit": {
+                    "anyOf": [
+                      {
+                        "maxItems": 2,
+                        "minItems": 2,
+                        "prefixItems": [
+                          {
+                            "type": "string"
+                          },
+                          {
+                            "type": "string"
+                          }
+                        ],
+                        "type": "array"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "default": null,
+                    "title": "X Axis Unit"
+                  }
+                },
+                "title": "CsvInputParams",
+                "type": "object"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "format": {
+                "const": "hdf5"
+              }
+            },
+            "required": [
+              "format"
+            ]
+          },
+          "then": {
+            "properties": {
+              "format_params": {
+                "description": "Parameters for reading HDF5 files.",
+                "properties": {
+                  "as_hsi": {
+                    "default": true,
+                    "title": "As Hsi",
+                    "type": "boolean"
+                  },
+                  "axes_order": {
+                    "default": [
+                      "X",
+                      "Y",
+                      "S"
+                    ],
+                    "items": {
+                      "enum": [
+                        "X",
+                        "Y",
+                        "S"
+                      ],
+                      "type": "string"
+                    },
+                    "maxItems": 3,
+                    "minItems": 1,
+                    "title": "Axes Order",
+                    "type": "array"
+                  },
+                  "data_label": {
+                    "default": "data",
+                    "title": "Data Label",
+                    "type": "string"
+                  },
+                  "data_unit": {
+                    "anyOf": [
+                      {
+                        "maxItems": 2,
+                        "minItems": 2,
+                        "prefixItems": [
+                          {
+                            "type": "string"
+                          },
+                          {
+                            "type": "string"
+                          }
+                        ],
+                        "type": "array"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "default": null,
+                    "title": "Data Unit"
+                  },
+                  "invert_x_axis": {
+                    "default": false,
+                    "title": "Invert X Axis",
+                    "type": "boolean"
+                  },
+                  "name": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "default": null,
+                    "title": "Name"
+                  },
+                  "plain_h5_file": {
+                    "default": true,
+                    "title": "Plain H5 File",
+                    "type": "boolean"
+                  },
+                  "x_axis_unit": {
+                    "anyOf": [
+                      {
+                        "maxItems": 2,
+                        "minItems": 2,
+                        "prefixItems": [
+                          {
+                            "type": "string"
+                          },
+                          {
+                            "type": "string"
+                          }
+                        ],
+                        "type": "array"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "default": null,
+                    "title": "X Axis Unit"
+                  },
+                  "x_label": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "default": null,
+                    "title": "X Label"
+                  }
+                },
+                "title": "HDF5Params",
+                "type": "object"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "format": {
+                "const": "hdf5_nexus"
+              }
+            },
+            "required": [
+              "format"
+            ]
+          },
+          "then": {
+            "properties": {
+              "format_params": {
+                "description": "Parameters for reading HDF5 (NeXus) files.",
+                "properties": {
+                  "as_hsi": {
+                    "default": true,
+                    "title": "As Hsi",
+                    "type": "boolean"
+                  },
+                  "name": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "default": null,
+                    "title": "Name"
+                  }
+                },
+                "title": "HDF5NeXusParams",
+                "type": "object"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "format": {
+                "const": "horiba5"
+              }
+            },
+            "required": [
+              "format"
+            ]
+          },
+          "then": {
+            "properties": {
+              "format_params": {
+                "description": "Parameters for reading Horiba LabSpec 5 NGC/NGS files.",
+                "properties": {
+                  "as_hsi": {
+                    "default": true,
+                    "title": "As Hsi",
+                    "type": "boolean"
+                  },
+                  "read_tables": {
+                    "default": true,
+                    "title": "Read Tables",
+                    "type": "boolean"
+                  }
+                },
+                "title": "Horiba5Params",
+                "type": "object"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "format": {
+                "const": "matlab"
+              }
+            },
+            "required": [
+              "format"
+            ]
+          },
+          "then": {
+            "properties": {
+              "format_params": {
+                "description": "Parameters for reading MATLAB/Octave mat files.",
+                "properties": {
+                  "as_hsi": {
+                    "default": true,
+                    "title": "As Hsi",
+                    "type": "boolean"
+                  },
+                  "axes_order": {
+                    "default": [
+                      "X",
+                      "Y",
+                      "S"
+                    ],
+                    "items": {
+                      "enum": [
+                        "X",
+                        "Y",
+                        "S"
+                      ],
+                      "type": "string"
+                    },
+                    "maxItems": 3,
+                    "minItems": 1,
+                    "title": "Axes Order",
+                    "type": "array"
+                  },
+                  "data_label": {
+                    "default": "data",
+                    "title": "Data Label",
+                    "type": "string"
+                  },
+                  "data_unit": {
+                    "anyOf": [
+                      {
+                        "maxItems": 2,
+                        "minItems": 2,
+                        "prefixItems": [
+                          {
+                            "type": "string"
+                          },
+                          {
+                            "type": "string"
+                          }
+                        ],
+                        "type": "array"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "default": null,
+                    "title": "Data Unit"
+                  },
+                  "invert_x_axis": {
+                    "default": false,
+                    "title": "Invert X Axis",
+                    "type": "boolean"
+                  },
+                  "name": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "default": null,
+                    "title": "Name"
+                  },
+                  "plain_h5_file": {
+                    "default": false,
+                    "title": "Plain H5 File",
+                    "type": "boolean"
+                  },
+                  "x_axis_unit": {
+                    "anyOf": [
+                      {
+                        "maxItems": 2,
+                        "minItems": 2,
+                        "prefixItems": [
+                          {
+                            "type": "string"
+                          },
+                          {
+                            "type": "string"
+                          }
+                        ],
+                        "type": "array"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "default": null,
+                    "title": "X Axis Unit"
+                  },
+                  "x_label": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "default": null,
+                    "title": "X Label"
+                  }
+                },
+                "title": "MATLABParams",
+                "type": "object"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "format": {
+                "const": "matlab_witec"
+              }
+            },
+            "required": [
+              "format"
+            ]
+          },
+          "then": {
+            "properties": {
+              "format_params": {
+                "description": "Parameters for reading WITec's MATLAB mat files.",
+                "properties": {
+                  "as_hsi": {
+                    "default": true,
+                    "title": "As Hsi",
+                    "type": "boolean"
+                  },
+                  "auto_import_images": {
+                    "default": false,
+                    "title": "Auto Import Images",
+                    "type": "boolean"
+                  },
+                  "name": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "default": null,
+                    "title": "Name"
+                  }
+                },
+                "title": "MATLABWITecParams",
+                "type": "object"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "format": {
+                "const": "ownformat"
+              }
+            },
+            "required": [
+              "format"
+            ]
+          },
+          "then": {
+            "properties": {
+              "format_params": {
+                "description": "Parameters for reading our flavour of CSV/Feather/Parquet files.",
+                "properties": {
+                  "as_hsi": {
+                    "default": true,
+                    "title": "As Hsi",
+                    "type": "boolean"
+                  },
+                  "data_unit": {
+                    "anyOf": [
+                      {
+                        "maxItems": 2,
+                        "minItems": 2,
+                        "prefixItems": [
+                          {
+                            "type": "string"
+                          },
+                          {
+                            "type": "string"
+                          }
+                        ],
+                        "type": "array"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "default": null,
+                    "title": "Data Unit"
+                  },
+                  "img_height": {
+                    "anyOf": [
+                      {
+                        "type": "integer"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "default": null,
+                    "title": "Img Height"
+                  },
+                  "img_width": {
+                    "anyOf": [
+                      {
+                        "type": "integer"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "default": null,
+                    "title": "Img Width"
+                  },
+                  "reorder_using_xy_pos": {
+                    "default": true,
+                    "title": "Reorder Using Xy Pos",
+                    "type": "boolean"
+                  },
+                  "x_axis_unit": {
+                    "anyOf": [
+                      {
+                        "maxItems": 2,
+                        "minItems": 2,
+                        "prefixItems": [
+                          {
+                            "type": "string"
+                          },
+                          {
+                            "type": "string"
+                          }
+                        ],
+                        "type": "array"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "default": null,
+                    "title": "X Axis Unit"
+                  }
+                },
+                "title": "OwnFormatInputParams",
+                "type": "object"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "format": {
+                "const": "pickle"
+              }
+            },
+            "required": [
+              "format"
+            ]
+          },
+          "then": {
+            "properties": {
+              "format_params": {
+                "description": "Parameters for reading/writing Pickle files.",
+                "properties": {
+                  "compressed": {
+                    "default": false,
+                    "title": "Compressed",
+                    "type": "boolean"
+                  }
+                },
+                "title": "PickleFormatParams",
+                "type": "object"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "format": {
+                "const": "renishaw_wdf"
+              }
+            },
+            "required": [
+              "format"
+            ]
+          },
+          "then": {
+            "properties": {
+              "format_params": {
+                "description": "Parameters for reading Renishaw WDF files.",
+                "properties": {
+                  "as_hsi": {
+                    "default": true,
+                    "title": "As Hsi",
+                    "type": "boolean"
+                  }
+                },
+                "title": "RenishawWDFInputParams",
+                "type": "object"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "format": {
+                "const": "witec"
+              }
+            },
+            "required": [
+              "format"
+            ]
+          },
+          "then": {
+            "properties": {
+              "format_params": {
+                "description": "Parameters for reading WITec(TM) Project *.wid/*.wip files.",
+                "properties": {
+                  "as_hsi": {
+                    "default": true,
+                    "title": "As Hsi",
+                    "type": "boolean"
+                  }
+                },
+                "title": "WITecFormatParams",
+                "type": "object"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "format": {
+                "const": "zarr"
+              }
+            },
+            "required": [
+              "format"
+            ]
+          },
+          "then": {
+            "properties": {
+              "format_params": {
+                "description": "Parameters for reading Zarr files.",
+                "properties": {},
+                "title": "ZarrFormatInputParams",
+                "type": "object"
+              }
+            }
+          }
+        }
+      ],
+      "properties": {
+        "format": {
+          "default": "csv",
+          "enum": [
+            "csv",
+            "hdf5",
+            "hdf5_nexus",
+            "horiba5",
+            "matlab",
+            "matlab_witec",
+            "ownformat",
+            "pickle",
+            "renishaw_wdf",
+            "witec",
+            "zarr"
+          ],
+          "type": "string"
+        },
+        "format_params": {
+          "additionalProperties": true,
+          "title": "Format Params",
+          "type": "object"
+        }
+      },
+      "title": "BatchInputConfig",
+      "type": "object"
+    },
+    "BatchOutputConfig": {
+      "additionalProperties": true,
+      "properties": {
+        "additional_info": {
+          "anyOf": [
+            {
+              "additionalProperties": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "number"
+                  }
+                ]
+              },
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Additional Info"
+        },
+        "as_dataframe": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "string"
+            }
+          ],
+          "default": false,
+          "title": "As Dataframe"
+        },
+        "format": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Format"
+        },
+        "single_spectrum": {
+          "default": false,
+          "title": "Single Spectrum",
+          "type": "boolean"
+        },
+        "transpose": {
+          "default": false,
+          "title": "Transpose",
+          "type": "boolean"
+        }
+      },
+      "title": "BatchOutputConfig",
+      "type": "object"
+    },
+    "step.cluster.StepNormalizeParams": {
+      "additionalProperties": false,
+      "description": "Parameters for normalization step.",
+      "properties": {
+        "by_pixel": {
+          "default": true,
+          "title": "By Pixel",
+          "type": "boolean"
+        },
+        "mask": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Mask"
+        },
+        "norm": {
+          "default": "l2",
+          "enum": [
+            "l1",
+            "l2",
+            "max",
+            "scale",
+            "minmax_scale",
+            "frobenius",
+            "spectral_position",
+            "area"
+          ],
+          "title": "Norm",
+          "type": "string"
+        },
+        "roi_x": {
+          "anyOf": [
+            {
+              "maxItems": 2,
+              "minItems": 2,
+              "prefixItems": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "number"
+                }
+              ],
+              "type": "array"
+            },
+            {
+              "items": {
+                "maxItems": 2,
+                "minItems": 2,
+                "prefixItems": [
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "number"
+                  }
+                ],
+                "type": "array"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Roi X"
+        },
+        "separate_regions": {
+          "default": false,
+          "title": "Separate Regions",
+          "type": "boolean"
+        },
+        "wn": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Wn"
+        }
+      },
+      "title": "StepNormalizeParams",
+      "type": "object"
+    },
+    "step.correct_baseline.StepCorrectBaselineParamsFree": {
+      "additionalProperties": true,
+      "description": "Parameters for parameter-free baseline methods.",
+      "properties": {
+        "force_nonnegative": {
+          "default": false,
+          "title": "Force Nonnegative",
+          "type": "boolean"
+        },
+        "mask": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Mask"
+        },
+        "method": {
+          "default": "snip",
+          "enum": [
+            "beads",
+            "snip"
+          ],
+          "title": "Method",
+          "type": "string"
+        },
+        "n_jobs": {
+          "default": -1,
+          "title": "N Jobs",
+          "type": "integer"
+        },
+        "roi_x": {
+          "anyOf": [
+            {
+              "maxItems": 2,
+              "minItems": 2,
+              "prefixItems": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "number"
+                }
+              ],
+              "type": "array"
+            },
+            {
+              "items": {
+                "maxItems": 2,
+                "minItems": 2,
+                "prefixItems": [
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "number"
+                  }
+                ],
+                "type": "array"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Roi X"
+        },
+        "separate_regions": {
+          "default": false,
+          "title": "Separate Regions",
+          "type": "boolean"
+        }
+      },
+      "title": "StepCorrectBaselineParamsFree",
+      "type": "object"
+    },
+    "step.correct_baseline.StepCorrectBaselineParamsPLS": {
+      "additionalProperties": true,
+      "description": "Parameters for penalized least-squares baseline methods.",
+      "properties": {
+        "force_nonnegative": {
+          "default": false,
+          "title": "Force Nonnegative",
+          "type": "boolean"
+        },
+        "lambda_": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Lambda"
+        },
+        "mask": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Mask"
+        },
+        "method": {
+          "default": "arpls",
+          "enum": [
+            "arpls",
+            "iarpls",
+            "aspls",
+            "airpls"
+          ],
+          "title": "Method",
+          "type": "string"
+        },
+        "n_jobs": {
+          "default": -1,
+          "title": "N Jobs",
+          "type": "integer"
+        },
+        "roi_x": {
+          "anyOf": [
+            {
+              "maxItems": 2,
+              "minItems": 2,
+              "prefixItems": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "number"
+                }
+              ],
+              "type": "array"
+            },
+            {
+              "items": {
+                "maxItems": 2,
+                "minItems": 2,
+                "prefixItems": [
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "number"
+                  }
+                ],
+                "type": "array"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Roi X"
+        },
+        "separate_regions": {
+          "default": false,
+          "title": "Separate Regions",
+          "type": "boolean"
+        }
+      },
+      "title": "StepCorrectBaselineParamsPLS",
+      "type": "object"
+    },
+    "step.correct_baseline.StepCorrectBaselineParamsPLSEta": {
+      "additionalProperties": true,
+      "description": "Parameters for DRPLS baseline correction.",
+      "properties": {
+        "eta": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Eta"
+        },
+        "force_nonnegative": {
+          "default": false,
+          "title": "Force Nonnegative",
+          "type": "boolean"
+        },
+        "lambda_": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Lambda"
+        },
+        "mask": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Mask"
+        },
+        "method": {
+          "const": "drpls",
+          "default": "drpls",
+          "title": "Method",
+          "type": "string"
+        },
+        "n_jobs": {
+          "default": -1,
+          "title": "N Jobs",
+          "type": "integer"
+        },
+        "roi_x": {
+          "anyOf": [
+            {
+              "maxItems": 2,
+              "minItems": 2,
+              "prefixItems": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "number"
+                }
+              ],
+              "type": "array"
+            },
+            {
+              "items": {
+                "maxItems": 2,
+                "minItems": 2,
+                "prefixItems": [
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "number"
+                  }
+                ],
+                "type": "array"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Roi X"
+        },
+        "separate_regions": {
+          "default": false,
+          "title": "Separate Regions",
+          "type": "boolean"
+        }
+      },
+      "title": "StepCorrectBaselineParamsPLSEta",
+      "type": "object"
+    },
+    "step.correct_baseline.StepCorrectBaselineParamsPoly": {
+      "additionalProperties": true,
+      "description": "Parameters for polynomial-based baseline methods.",
+      "properties": {
+        "force_nonnegative": {
+          "default": false,
+          "title": "Force Nonnegative",
+          "type": "boolean"
+        },
+        "mask": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Mask"
+        },
+        "method": {
+          "default": "poly",
+          "enum": [
+            "poly",
+            "imodpoly",
+            "goldindec"
+          ],
+          "title": "Method",
+          "type": "string"
+        },
+        "n_jobs": {
+          "default": -1,
+          "title": "N Jobs",
+          "type": "integer"
+        },
+        "poly_order": {
+          "anyOf": [
+            {
+              "minimum": 1,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Poly Order"
+        },
+        "roi_x": {
+          "anyOf": [
+            {
+              "maxItems": 2,
+              "minItems": 2,
+              "prefixItems": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "number"
+                }
+              ],
+              "type": "array"
+            },
+            {
+              "items": {
+                "maxItems": 2,
+                "minItems": 2,
+                "prefixItems": [
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "number"
+                  }
+                ],
+                "type": "array"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Roi X"
+        },
+        "separate_regions": {
+          "default": false,
+          "title": "Separate Regions",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "poly_order"
+      ],
+      "title": "StepCorrectBaselineParamsPoly",
+      "type": "object"
+    },
+    "step.correct_baseline.StepCorrectBaselineParamsRubberband": {
+      "additionalProperties": true,
+      "description": "Parameters for rubberband baseline correction.",
+      "properties": {
+        "force_nonnegative": {
+          "default": false,
+          "title": "Force Nonnegative",
+          "type": "boolean"
+        },
+        "kind": {
+          "default": "slinear",
+          "enum": [
+            "linear",
+            "slinear"
+          ],
+          "title": "Kind",
+          "type": "string"
+        },
+        "mask": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Mask"
+        },
+        "max_points": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Max Points"
+        },
+        "method": {
+          "const": "rubberband",
+          "default": "rubberband",
+          "title": "Method",
+          "type": "string"
+        },
+        "n_jobs": {
+          "default": -1,
+          "title": "N Jobs",
+          "type": "integer"
+        },
+        "roi_x": {
+          "anyOf": [
+            {
+              "maxItems": 2,
+              "minItems": 2,
+              "prefixItems": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "number"
+                }
+              ],
+              "type": "array"
+            },
+            {
+              "items": {
+                "maxItems": 2,
+                "minItems": 2,
+                "prefixItems": [
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "number"
+                  }
+                ],
+                "type": "array"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Roi X"
+        },
+        "separate_regions": {
+          "default": false,
+          "title": "Separate Regions",
+          "type": "boolean"
+        }
+      },
+      "title": "StepCorrectBaselineParamsRubberband",
+      "type": "object"
+    },
+    "step.despike.Axis": {
+      "description": "Integer indices into the 2-D ``(n_pixels, n_spectral)`` data array.\n\nExamples\n--------\n>>> data.shape[Axis.PIXEL]     # number of pixels\n>>> data.shape[Axis.SPECTRAL]  # number of spectral channels",
+      "enum": [
+        0,
+        1
+      ],
+      "title": "Axis",
+      "type": "integer"
+    },
+    "step.edit_image.DataRules": {
+      "properties": {
+        "agg": {
+          "default": "mean",
+          "enum": [
+            "mean",
+            "area",
+            "max",
+            "min",
+            "fwhm"
+          ],
+          "title": "Agg",
+          "type": "string"
+        },
+        "mask": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Mask"
+        },
+        "remove_baseline": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Remove Baseline"
+        },
+        "roi_x_A": {
+          "anyOf": [
+            {
+              "maxItems": 2,
+              "minItems": 2,
+              "prefixItems": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "number"
+                }
+              ],
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Roi X A"
+        },
+        "roi_x_B": {
+          "anyOf": [
+            {
+              "maxItems": 2,
+              "minItems": 2,
+              "prefixItems": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "number"
+                }
+              ],
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Roi X B"
+        }
+      },
+      "title": "DataRules",
+      "type": "object"
+    },
+    "step.export_composite_image.BlendModes": {
+      "description": "Supported compositing blend modes for image overlays.",
+      "enum": [
+        "screen",
+        "add",
+        "multiply"
+      ],
+      "title": "BlendModes",
+      "type": "string"
+    },
+    "step.flip.SpatialAxis": {
+      "description": "Integer indices into a 2-D spatial ``(height, width)`` array.",
+      "enum": [
+        0,
+        1
+      ],
+      "title": "SpatialAxis",
+      "type": "integer"
+    },
+    "step.identify_substrate.StepNormalizeParams": {
+      "additionalProperties": false,
+      "description": "Parameters for normalization step.",
+      "properties": {
+        "by_pixel": {
+          "default": true,
+          "title": "By Pixel",
+          "type": "boolean"
+        },
+        "mask": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Mask"
+        },
+        "norm": {
+          "default": "l2",
+          "enum": [
+            "l1",
+            "l2",
+            "max",
+            "scale",
+            "minmax_scale",
+            "frobenius",
+            "spectral_position",
+            "area"
+          ],
+          "title": "Norm",
+          "type": "string"
+        },
+        "roi_x": {
+          "anyOf": [
+            {
+              "maxItems": 2,
+              "minItems": 2,
+              "prefixItems": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "number"
+                }
+              ],
+              "type": "array"
+            },
+            {
+              "items": {
+                "maxItems": 2,
+                "minItems": 2,
+                "prefixItems": [
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "number"
+                  }
+                ],
+                "type": "array"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Roi X"
+        },
+        "separate_regions": {
+          "default": false,
+          "title": "Separate Regions",
+          "type": "boolean"
+        },
+        "wn": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Wn"
+        }
+      },
+      "title": "StepNormalizeParams",
+      "type": "object"
+    },
+    "step.pca.StepNormalizeParams": {
+      "additionalProperties": false,
+      "description": "Parameters for normalization step.",
+      "properties": {
+        "by_pixel": {
+          "default": true,
+          "title": "By Pixel",
+          "type": "boolean"
+        },
+        "mask": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Mask"
+        },
+        "norm": {
+          "default": "l2",
+          "enum": [
+            "l1",
+            "l2",
+            "max",
+            "scale",
+            "minmax_scale",
+            "frobenius",
+            "spectral_position",
+            "area"
+          ],
+          "title": "Norm",
+          "type": "string"
+        },
+        "roi_x": {
+          "anyOf": [
+            {
+              "maxItems": 2,
+              "minItems": 2,
+              "prefixItems": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "number"
+                }
+              ],
+              "type": "array"
+            },
+            {
+              "items": {
+                "maxItems": 2,
+                "minItems": 2,
+                "prefixItems": [
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "number"
+                  }
+                ],
+                "type": "array"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Roi X"
+        },
+        "separate_regions": {
+          "default": false,
+          "title": "Separate Regions",
+          "type": "boolean"
+        },
+        "wn": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Wn"
+        }
+      },
+      "title": "StepNormalizeParams",
+      "type": "object"
+    },
+    "step.smooth_spatial.StepSmoothMapParamsGaussian": {
+      "description": "Parameters for `smooth_spatial` with Gaussian filter.",
+      "properties": {
+        "method": {
+          "const": "gaussian",
+          "default": "gaussian",
+          "title": "Method",
+          "type": "string"
+        },
+        "roi_x": {
+          "anyOf": [
+            {
+              "maxItems": 2,
+              "minItems": 2,
+              "prefixItems": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "number"
+                }
+              ],
+              "type": "array"
+            },
+            {
+              "items": {
+                "maxItems": 2,
+                "minItems": 2,
+                "prefixItems": [
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "number"
+                  }
+                ],
+                "type": "array"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Roi X"
+        },
+        "sigma": {
+          "exclusiveMinimum": 0,
+          "title": "Sigma",
+          "type": "number"
+        }
+      },
+      "required": [
+        "sigma"
+      ],
+      "title": "StepSmoothMapParamsGaussian",
+      "type": "object"
+    },
+    "step.smooth_spatial.StepSmoothMapParamsMedian": {
+      "description": "Parameters for `smooth_spatial` with median filter.",
+      "properties": {
+        "boundary_mode": {
+          "default": "reflect",
+          "enum": [
+            "reflect",
+            "nearest"
+          ],
+          "title": "Boundary Mode",
+          "type": "string"
+        },
+        "method": {
+          "const": "median",
+          "default": "median",
+          "title": "Method",
+          "type": "string"
+        },
+        "roi_x": {
+          "anyOf": [
+            {
+              "maxItems": 2,
+              "minItems": 2,
+              "prefixItems": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "number"
+                }
+              ],
+              "type": "array"
+            },
+            {
+              "items": {
+                "maxItems": 2,
+                "minItems": 2,
+                "prefixItems": [
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "number"
+                  }
+                ],
+                "type": "array"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Roi X"
+        },
+        "size": {
+          "default": 3,
+          "minimum": 1,
+          "title": "Size",
+          "type": "integer"
+        }
+      },
+      "title": "StepSmoothMapParamsMedian",
+      "type": "object"
+    },
+    "step.smooth_spectral.StepSmoothSpectrumParamsSavGol": {
+      "description": "Parameters for `smooth_spectral` with Savitzky-Golay filter.",
+      "properties": {
+        "mask": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Mask"
+        },
+        "method": {
+          "const": "savgol",
+          "default": "savgol",
+          "title": "Method",
+          "type": "string"
+        },
+        "polyorder": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": 2,
+          "title": "Polyorder"
+        },
+        "roi_x": {
+          "anyOf": [
+            {
+              "maxItems": 2,
+              "minItems": 2,
+              "prefixItems": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "number"
+                }
+              ],
+              "type": "array"
+            },
+            {
+              "items": {
+                "maxItems": 2,
+                "minItems": 2,
+                "prefixItems": [
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "number"
+                  }
+                ],
+                "type": "array"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Roi X"
+        },
+        "separate_regions": {
+          "default": false,
+          "title": "Separate Regions",
+          "type": "boolean"
+        },
+        "window_length": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": 7,
+          "title": "Window Length"
+        }
+      },
+      "title": "StepSmoothSpectrumParamsSavGol",
+      "type": "object"
+    },
+    "step.smooth_spectral.StepSmoothSpectrumParamsWhittaker": {
+      "description": "Parameters for `smooth_spectral` with Whittaker smoother.",
+      "properties": {
+        "d": {
+          "anyOf": [
+            {
+              "minimum": 1,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "D"
+        },
+        "ignore_x_axis": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": false,
+          "title": "Ignore X Axis"
+        },
+        "lambda_": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": 10,
+          "title": "Lambda"
+        },
+        "mask": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Mask"
+        },
+        "method": {
+          "const": "whittaker",
+          "default": "whittaker",
+          "title": "Method",
+          "type": "string"
+        },
+        "roi_x": {
+          "anyOf": [
+            {
+              "maxItems": 2,
+              "minItems": 2,
+              "prefixItems": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "number"
+                }
+              ],
+              "type": "array"
+            },
+            {
+              "items": {
+                "maxItems": 2,
+                "minItems": 2,
+                "prefixItems": [
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "number"
+                  }
+                ],
+                "type": "array"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Roi X"
+        },
+        "separate_regions": {
+          "default": false,
+          "title": "Separate Regions",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "d"
+      ],
+      "title": "StepSmoothSpectrumParamsWhittaker",
+      "type": "object"
+    },
+    "step.spectral_projection_image.COLORMAPS_NAMES": {
+      "enum": [
+        "magma",
+        "inferno",
+        "plasma",
+        "viridis",
+        "cividis",
+        "twilight",
+        "twilight_shifted",
+        "turbo",
+        "berlin",
+        "managua",
+        "vanimo",
+        "Blues",
+        "BrBG",
+        "BuGn",
+        "BuPu",
+        "CMRmap",
+        "GnBu",
+        "Greens",
+        "Greys",
+        "OrRd",
+        "Oranges",
+        "PRGn",
+        "PiYG",
+        "PuBu",
+        "PuBuGn",
+        "PuOr",
+        "PuRd",
+        "Purples",
+        "RdBu",
+        "RdGy",
+        "RdPu",
+        "RdYlBu",
+        "RdYlGn",
+        "Reds",
+        "Spectral",
+        "Wistia",
+        "YlGn",
+        "YlGnBu",
+        "YlOrBr",
+        "YlOrRd",
+        "afmhot",
+        "autumn",
+        "binary",
+        "bone",
+        "brg",
+        "bwr",
+        "cool",
+        "coolwarm",
+        "copper",
+        "cubehelix",
+        "flag",
+        "gist_earth",
+        "gist_gray",
+        "gist_heat",
+        "gist_ncar",
+        "gist_rainbow",
+        "gist_stern",
+        "gist_yarg",
+        "gnuplot",
+        "gnuplot2",
+        "gray",
+        "hot",
+        "hsv",
+        "jet",
+        "nipy_spectral",
+        "ocean",
+        "pink",
+        "prism",
+        "rainbow",
+        "seismic",
+        "spring",
+        "summer",
+        "terrain",
+        "winter",
+        "Accent",
+        "okabe_ito",
+        "Dark2",
+        "Paired",
+        "Pastel1",
+        "Pastel2",
+        "Set1",
+        "Set2",
+        "Set3",
+        "tab10",
+        "tab20",
+        "tab20b",
+        "tab20c",
+        "grey",
+        "gist_grey",
+        "gist_yerg",
+        "Grays",
+        "magma_r",
+        "inferno_r",
+        "plasma_r",
+        "viridis_r",
+        "cividis_r",
+        "twilight_r",
+        "twilight_shifted_r",
+        "turbo_r",
+        "berlin_r",
+        "managua_r",
+        "vanimo_r",
+        "Blues_r",
+        "BrBG_r",
+        "BuGn_r",
+        "BuPu_r",
+        "CMRmap_r",
+        "GnBu_r",
+        "Greens_r",
+        "Greys_r",
+        "OrRd_r",
+        "Oranges_r",
+        "PRGn_r",
+        "PiYG_r",
+        "PuBu_r",
+        "PuBuGn_r",
+        "PuOr_r",
+        "PuRd_r",
+        "Purples_r",
+        "RdBu_r",
+        "RdGy_r",
+        "RdPu_r",
+        "RdYlBu_r",
+        "RdYlGn_r",
+        "Reds_r",
+        "Spectral_r",
+        "Wistia_r",
+        "YlGn_r",
+        "YlGnBu_r",
+        "YlOrBr_r",
+        "YlOrRd_r",
+        "afmhot_r",
+        "autumn_r",
+        "binary_r",
+        "bone_r",
+        "brg_r",
+        "bwr_r",
+        "cool_r",
+        "coolwarm_r",
+        "copper_r",
+        "cubehelix_r",
+        "flag_r",
+        "gist_earth_r",
+        "gist_gray_r",
+        "gist_heat_r",
+        "gist_ncar_r",
+        "gist_rainbow_r",
+        "gist_stern_r",
+        "gist_yarg_r",
+        "gnuplot_r",
+        "gnuplot2_r",
+        "gray_r",
+        "hot_r",
+        "hsv_r",
+        "jet_r",
+        "nipy_spectral_r",
+        "ocean_r",
+        "pink_r",
+        "prism_r",
+        "rainbow_r",
+        "seismic_r",
+        "spring_r",
+        "summer_r",
+        "terrain_r",
+        "winter_r",
+        "Accent_r",
+        "okabe_ito_r",
+        "Dark2_r",
+        "Paired_r",
+        "Pastel1_r",
+        "Pastel2_r",
+        "Set1_r",
+        "Set2_r",
+        "Set3_r",
+        "tab10_r",
+        "tab20_r",
+        "tab20b_r",
+        "tab20c_r",
+        "grey_r",
+        "gist_grey_r",
+        "gist_yerg_r",
+        "Grays_r"
+      ],
+      "title": "COLORMAPS_NAMES",
+      "type": "string"
+    },
+    "step.spectral_projection_image.DataRules": {
+      "properties": {
+        "agg": {
+          "default": "mean",
+          "enum": [
+            "mean",
+            "area",
+            "max",
+            "min",
+            "fwhm"
+          ],
+          "title": "Agg",
+          "type": "string"
+        },
+        "mask": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Mask"
+        },
+        "remove_baseline": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Remove Baseline"
+        },
+        "roi_x_A": {
+          "anyOf": [
+            {
+              "maxItems": 2,
+              "minItems": 2,
+              "prefixItems": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "number"
+                }
+              ],
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Roi X A"
+        },
+        "roi_x_B": {
+          "anyOf": [
+            {
+              "maxItems": 2,
+              "minItems": 2,
+              "prefixItems": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "number"
+                }
+              ],
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Roi X B"
+        }
+      },
+      "title": "DataRules",
+      "type": "object"
+    },
+    "step.spectral_projection_image.VizRules": {
+      "properties": {
+        "alpha": {
+          "anyOf": [
+            {
+              "maximum": 1,
+              "minimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Alpha"
+        },
+        "auto_levels": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Auto Levels"
+        },
+        "cmap": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/step.spectral_projection_image.COLORMAPS_NAMES"
+            },
+            {
+              "format": "color",
+              "type": "string"
+            }
+          ],
+          "default": "turbo",
+          "title": "Cmap"
+        },
+        "color2": {
+          "anyOf": [
+            {
+              "format": "color",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Color2"
+        },
+        "invert": {
+          "default": false,
+          "title": "Invert",
+          "type": "boolean"
+        },
+        "max": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Max"
+        },
+        "min": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Min"
+        },
+        "vmax": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Vmax"
+        },
+        "vmin": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Vmin"
+        }
+      },
+      "title": "VizRules",
+      "type": "object"
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": true,
+  "properties": {
+    "general": {
+      "$ref": "#/$defs/BatchGeneralConfig"
+    },
+    "input": {
+      "$ref": "#/$defs/BatchInputConfig"
+    },
+    "output": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/BatchOutputConfig"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "pipeline": {
+      "items": {
+        "oneOf": [
+          {
+            "description": "utility step",
+            "properties": {
+              "name": {
+                "const": "add_spectrum"
+              },
+              "params": {
+                "additionalProperties": false,
+                "description": "Parameters for `add_spectrum`.",
+                "properties": {
+                  "as_hsi": {
+                    "default": false,
+                    "title": "As Hsi",
+                    "type": "boolean"
+                  },
+                  "file_path": {
+                    "anyOf": [
+                      {
+                        "format": "file-path",
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "default": null,
+                    "title": "File Path"
+                  },
+                  "format_name": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "default": null,
+                    "title": "Format Name"
+                  },
+                  "format_params": {
+                    "additionalProperties": true,
+                    "title": "Format Params",
+                    "type": "object"
+                  },
+                  "id": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "title": "Id"
+                  }
+                },
+                "required": [
+                  "format_params"
+                ],
+                "title": "InputConfigParams",
+                "type": "object"
+              }
+            },
+            "required": [
+              "name"
+            ],
+            "title": "Add External Spectrum",
+            "type": "object"
+          },
+          {
+            "description": "analysis step",
+            "properties": {
+              "name": {
+                "const": "cluster"
+              },
+              "params": {
+                "additionalProperties": false,
+                "description": "Parameters for `cluster`.",
+                "properties": {
+                  "id": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "title": "Id"
+                  },
+                  "mask": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "default": null,
+                    "title": "Mask"
+                  },
+                  "method": {
+                    "default": "kmeans",
+                    "enum": [
+                      "kmeans",
+                      "minibatchkmeans",
+                      "hierarchical"
+                    ],
+                    "title": "Method",
+                    "type": "string"
+                  },
+                  "n_clusters": {
+                    "default": 4,
+                    "title": "N Clusters",
+                    "type": "integer"
+                  },
+                  "normalize_kwargs": {
+                    "anyOf": [
+                      {
+                        "$ref": "#/$defs/step.cluster.StepNormalizeParams"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "default": null
+                  },
+                  "pca_n_components": {
+                    "anyOf": [
+                      {
+                        "type": "integer"
+                      },
+                      {
+                        "type": "number"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "default": 0,
+                    "title": "Pca N Components"
+                  },
+                  "roi_x": {
+                    "anyOf": [
+                      {
+                        "maxItems": 2,
+                        "minItems": 2,
+                        "prefixItems": [
+                          {
+                            "type": "number"
+                          },
+                          {
+                            "type": "number"
+                          }
+                        ],
+                        "type": "array"
+                      },
+                      {
+                        "items": {
+                          "maxItems": 2,
+                          "minItems": 2,
+                          "prefixItems": [
+                            {
+                              "type": "number"
+                            },
+                            {
+                              "type": "number"
+                            }
+                          ],
+                          "type": "array"
+                        },
+                        "type": "array"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "default": null,
+                    "title": "Roi X"
+                  }
+                },
+                "title": "StepClusterParams",
+                "type": "object"
+              }
+            },
+            "required": [
+              "name"
+            ],
+            "title": "Cluster",
+            "type": "object"
+          },
+          {
+            "description": "utility step",
+            "properties": {
+              "name": {
+                "const": "color_external_spectrum"
+              },
+              "params": {
+                "additionalProperties": false,
+                "description": "Parameters for `color_external_spectrum`.",
+                "properties": {
+                  "color": {
+                    "anyOf": [
+                      {
+                        "format": "color",
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "default": null,
+                    "title": "Color"
+                  },
+                  "id": {
+                    "title": "Id",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "id"
+                ],
+                "title": "StepColorExternalSpectrumParams",
+                "type": "object"
+              }
+            },
+            "required": [
+              "name"
+            ],
+            "title": "Set Color for External Spectrum",
+            "type": "object"
+          },
+          {
+            "description": "processing step",
+            "properties": {
+              "name": {
+                "const": "correct_baseline"
+              },
+              "params": {
+                "discriminator": {
+                  "mapping": {
+                    "airpls": "#/$defs/StepCorrectBaselineParamsPLS",
+                    "arpls": "#/$defs/StepCorrectBaselineParamsPLS",
+                    "aspls": "#/$defs/StepCorrectBaselineParamsPLS",
+                    "beads": "#/$defs/StepCorrectBaselineParamsFree",
+                    "drpls": "#/$defs/StepCorrectBaselineParamsPLSEta",
+                    "goldindec": "#/$defs/StepCorrectBaselineParamsPoly",
+                    "iarpls": "#/$defs/StepCorrectBaselineParamsPLS",
+                    "imodpoly": "#/$defs/StepCorrectBaselineParamsPoly",
+                    "poly": "#/$defs/StepCorrectBaselineParamsPoly",
+                    "rubberband": "#/$defs/StepCorrectBaselineParamsRubberband",
+                    "snip": "#/$defs/StepCorrectBaselineParamsFree"
+                  },
+                  "propertyName": "method"
+                },
+                "oneOf": [
+                  {
+                    "$ref": "#/$defs/step.correct_baseline.StepCorrectBaselineParamsPLS"
+                  },
+                  {
+                    "$ref": "#/$defs/step.correct_baseline.StepCorrectBaselineParamsPLSEta"
+                  },
+                  {
+                    "$ref": "#/$defs/step.correct_baseline.StepCorrectBaselineParamsFree"
+                  },
+                  {
+                    "$ref": "#/$defs/step.correct_baseline.StepCorrectBaselineParamsRubberband"
+                  },
+                  {
+                    "$ref": "#/$defs/step.correct_baseline.StepCorrectBaselineParamsPoly"
+                  }
+                ]
+              }
+            },
+            "required": [
+              "name"
+            ],
+            "title": "Correct Baseline",
+            "type": "object"
+          },
+          {
+            "description": "processing step",
+            "properties": {
+              "name": {
+                "const": "crop_spatial"
+              },
+              "params": {
+                "additionalProperties": false,
+                "description": "Parameters for `crop_spatial`.",
+                "properties": {
+                  "col_end": {
+                    "title": "Col End",
+                    "type": "integer"
+                  },
+                  "col_start": {
+                    "title": "Col Start",
+                    "type": "integer"
+                  },
+                  "crop_images": {
+                    "default": true,
+                    "title": "Crop Images",
+                    "type": "boolean"
+                  },
+                  "row_end": {
+                    "title": "Row End",
+                    "type": "integer"
+                  },
+                  "row_start": {
+                    "title": "Row Start",
+                    "type": "integer"
+                  }
+                },
+                "required": [
+                  "row_start",
+                  "row_end",
+                  "col_start",
+                  "col_end"
+                ],
+                "title": "StepCropSpatialParams",
+                "type": "object"
+              }
+            },
+            "required": [
+              "name"
+            ],
+            "title": "Crop map",
+            "type": "object"
+          },
+          {
+            "description": "processing step",
+            "properties": {
+              "name": {
+                "const": "crop_spectral"
+              },
+              "params": {
+                "additionalProperties": false,
+                "description": "Parameters for `crop_spectral`.",
+                "properties": {
+                  "roi_x": {
+                    "anyOf": [
+                      {
+                        "maxItems": 2,
+                        "minItems": 2,
+                        "prefixItems": [
+                          {
+                            "type": "number"
+                          },
+                          {
+                            "type": "number"
+                          }
+                        ],
+                        "type": "array"
+                      },
+                      {
+                        "items": {
+                          "maxItems": 2,
+                          "minItems": 2,
+                          "prefixItems": [
+                            {
+                              "type": "number"
+                            },
+                            {
+                              "type": "number"
+                            }
+                          ],
+                          "type": "array"
+                        },
+                        "type": "array"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "title": "Roi X"
+                  }
+                },
+                "required": [
+                  "roi_x"
+                ],
+                "title": "StepCropSpectralParams",
+                "type": "object"
+              }
+            },
+            "required": [
+              "name"
+            ],
+            "title": "Crop spectral axis",
+            "type": "object"
+          },
+          {
+            "description": "utility step",
+            "properties": {
+              "name": {
+                "const": "delete_external_spectrum"
+              },
+              "params": {
+                "additionalProperties": false,
+                "description": "Parameters for `delete_external_spectrum`.",
+                "properties": {
+                  "id": {
+                    "title": "Id",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "id"
+                ],
+                "title": "StepDeleteExternalSpectrumParams",
+                "type": "object"
+              }
+            },
+            "required": [
+              "name"
+            ],
+            "title": "Delete External Spectrum",
+            "type": "object"
+          },
+          {
+            "description": "utility step",
+            "properties": {
+              "name": {
+                "const": "delete_image"
+              },
+              "params": {
+                "additionalProperties": false,
+                "description": "Parameters for `delete_image`.",
+                "properties": {
+                  "image_id": {
+                    "title": "Image Id",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "image_id"
+                ],
+                "title": "StepDeleteImageParams",
+                "type": "object"
+              }
+            },
+            "required": [
+              "name"
+            ],
+            "title": "Delete Image",
+            "type": "object"
+          },
+          {
+            "description": "utility step",
+            "properties": {
+              "name": {
+                "const": "delete_images_group"
+              },
+              "params": {
+                "additionalProperties": false,
+                "description": "Parameters for `delete_images_group`.",
+                "properties": {
+                  "group_id": {
+                    "title": "Group Id",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "group_id"
+                ],
+                "title": "StepDeleteImagesGroupParams",
+                "type": "object"
+              }
+            },
+            "required": [
+              "name"
+            ],
+            "title": "Delete Image Group",
+            "type": "object"
+          },
+          {
+            "description": "utility step",
+            "properties": {
+              "name": {
+                "const": "delete_mask"
+              },
+              "params": {
+                "additionalProperties": false,
+                "description": "Parameters for `delete_mask`.",
+                "properties": {
+                  "mask_id": {
+                    "title": "Mask Id",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "mask_id"
+                ],
+                "title": "StepDeleteMaskParams",
+                "type": "object"
+              }
+            },
+            "required": [
+              "name"
+            ],
+            "title": "Delete Mask",
+            "type": "object"
+          },
+          {
+            "description": "utility step",
+            "properties": {
+              "name": {
+                "const": "delete_masks_group"
+              },
+              "params": {
+                "additionalProperties": false,
+                "description": "Parameters for `delete_masks_group`.",
+                "properties": {
+                  "group_id": {
+                    "title": "Group Id",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "group_id"
+                ],
+                "title": "StepDeleteMasksGroupParams",
+                "type": "object"
+              }
+            },
+            "required": [
+              "name"
+            ],
+            "title": "Delete Mask Group",
+            "type": "object"
+          },
+          {
+            "description": "processing step",
+            "properties": {
+              "name": {
+                "const": "despike"
+              },
+              "params": {
+                "additionalProperties": false,
+                "description": "Parameters for the despike processing step.",
+                "properties": {
+                  "axis": {
+                    "$ref": "#/$defs/step.despike.Axis",
+                    "default": 0
+                  },
+                  "correct_spikes": {
+                    "default": false,
+                    "title": "Correct Spikes",
+                    "type": "boolean"
+                  },
+                  "first_diff": {
+                    "default": true,
+                    "title": "First Diff",
+                    "type": "boolean"
+                  },
+                  "mask": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "default": null,
+                    "title": "Mask"
+                  },
+                  "method": {
+                    "default": "normal",
+                    "enum": [
+                      "normal",
+                      "mad"
+                    ],
+                    "title": "Method",
+                    "type": "string"
+                  },
+                  "n_jobs": {
+                    "default": -1,
+                    "title": "N Jobs",
+                    "type": "integer"
+                  },
+                  "roi_x": {
+                    "anyOf": [
+                      {
+                        "maxItems": 2,
+                        "minItems": 2,
+                        "prefixItems": [
+                          {
+                            "type": "number"
+                          },
+                          {
+                            "type": "number"
+                          }
+                        ],
+                        "type": "array"
+                      },
+                      {
+                        "items": {
+                          "maxItems": 2,
+                          "minItems": 2,
+                          "prefixItems": [
+                            {
+                              "type": "number"
+                            },
+                            {
+                              "type": "number"
+                            }
+                          ],
+                          "type": "array"
+                        },
+                        "type": "array"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "default": null,
+                    "title": "Roi X"
+                  },
+                  "threshold": {
+                    "default": 8,
+                    "exclusiveMinimum": 0,
+                    "title": "Threshold",
+                    "type": "number"
+                  }
+                },
+                "title": "StepDespikeParams",
+                "type": "object"
+              }
+            },
+            "required": [
+              "name"
+            ],
+            "title": "Detect and remove spikes",
+            "type": "object"
+          },
+          {
+            "description": "visualization step",
+            "properties": {
+              "name": {
+                "const": "edit_image"
+              },
+              "params": {
+                "additionalProperties": false,
+                "description": "Parameters for `edit_image`.",
+                "properties": {
+                  "data_rules": {
+                    "anyOf": [
+                      {
+                        "$ref": "#/$defs/step.edit_image.DataRules"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "default": null
+                  },
+                  "group_id": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "default": null,
+                    "title": "Group Id"
+                  },
+                  "group_order": {
+                    "anyOf": [
+                      {
+                        "items": {
+                          "type": "string"
+                        },
+                        "type": "array"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "default": null,
+                    "title": "Group Order"
+                  },
+                  "image_id": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "default": null,
+                    "title": "Image Id"
+                  },
+                  "keys_order": {
+                    "anyOf": [
+                      {
+                        "items": {
+                          "type": "string"
+                        },
+                        "type": "array"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "default": null,
+                    "title": "Keys Order"
+                  },
+                  "locked": {
+                    "anyOf": [
+                      {
+                        "type": "boolean"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "default": null,
+                    "title": "Locked"
+                  },
+                  "name": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "default": null,
+                    "title": "Name"
+                  },
+                  "visible": {
+                    "anyOf": [
+                      {
+                        "type": "boolean"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "default": null,
+                    "title": "Visible"
+                  },
+                  "viz_rules": {
+                    "anyOf": [
+                      {
+                        "additionalProperties": true,
+                        "type": "object"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "default": null,
+                    "title": "Viz Rules"
+                  }
+                },
+                "title": "StepEditImageParams",
+                "type": "object"
+              }
+            },
+            "required": [
+              "name"
+            ],
+            "title": "Edit Image",
+            "type": "object"
+          },
+          {
+            "description": "utility step",
+            "properties": {
+              "name": {
+                "const": "export_composite_image"
+              },
+              "params": {
+                "additionalProperties": false,
+                "description": "Parameters for `export_composite_image`.",
+                "properties": {
+                  "background_color": {
+                    "default": "#ffffff00",
+                    "title": "Background Color",
+                    "type": "string"
+                  },
+                  "blend_mode": {
+                    "$ref": "#/$defs/step.export_composite_image.BlendModes",
+                    "default": "screen"
+                  },
+                  "exclude_masks": {
+                    "anyOf": [
+                      {
+                        "items": {
+                          "type": "string"
+                        },
+                        "type": "array"
+                      },
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "boolean"
+                      }
+                    ],
+                    "default": false,
+                    "title": "Exclude Masks"
+                  },
+                  "images": {
+                    "anyOf": [
+                      {
+                        "items": {
+                          "type": "string"
+                        },
+                        "type": "array"
+                      },
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "default": null,
+                    "title": "Images"
+                  },
+                  "images_groups": {
+                    "anyOf": [
+                      {
+                        "items": {
+                          "type": "string"
+                        },
+                        "type": "array"
+                      },
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "default": null,
+                    "title": "Images Groups"
+                  },
+                  "masks": {
+                    "anyOf": [
+                      {
+                        "items": {
+                          "type": "string"
+                        },
+                        "type": "array"
+                      },
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "default": null,
+                    "title": "Masks"
+                  },
+                  "masks_groups": {
+                    "anyOf": [
+                      {
+                        "items": {
+                          "type": "string"
+                        },
+                        "type": "array"
+                      },
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "default": null,
+                    "title": "Masks Groups"
+                  },
+                  "max_size": {
+                    "anyOf": [
+                      {
+                        "maxItems": 2,
+                        "minItems": 2,
+                        "prefixItems": [
+                          {
+                            "type": "integer"
+                          },
+                          {
+                            "type": "integer"
+                          }
+                        ],
+                        "type": "array"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "default": null,
+                    "title": "Max Size"
+                  },
+                  "only_visible": {
+                    "default": false,
+                    "title": "Only Visible",
+                    "type": "boolean"
+                  },
+                  "out_file": {
+                    "anyOf": [
+                      {
+                        "format": "file-path",
+                        "type": "string"
+                      },
+                      {
+                        "format": "path",
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "default": null,
+                    "title": "Out File"
+                  }
+                },
+                "title": "StepExportCompositeImageParams",
+                "type": "object"
+              }
+            },
+            "required": [
+              "name"
+            ],
+            "title": "Export Composite Image",
+            "type": "object"
+          },
+          {
+            "description": "utility step",
+            "properties": {
+              "name": {
+                "const": "export_grouped_spectra"
+              },
+              "params": {
+                "additionalProperties": false,
+                "description": "Parameters for `export_grouped_spectra`.",
+                "properties": {
+                  "format": {
+                    "default": "csv",
+                    "title": "Format",
+                    "type": "string"
+                  },
+                  "group_key": {
+                    "title": "Group Key",
+                    "type": "string"
+                  },
+                  "out_path": {
+                    "title": "Out Path",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "group_key",
+                  "out_path"
+                ],
+                "title": "StepExportGroupedSpectraParams",
+                "type": "object"
+              }
+            },
+            "required": [
+              "name"
+            ],
+            "title": "Export Grouped Spectra",
+            "type": "object"
+          },
+          {
+            "description": "utility step",
+            "properties": {
+              "name": {
+                "const": "export_image"
+              },
+              "params": {
+                "additionalProperties": false,
+                "description": "Parameters for `export_image`.",
+                "properties": {
+                  "image_id": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "default": null,
+                    "title": "Image Id"
+                  },
+                  "out_file": {
+                    "anyOf": [
+                      {
+                        "format": "file-path",
+                        "type": "string"
+                      },
+                      {
+                        "format": "path",
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "default": null,
+                    "title": "Out File"
+                  }
+                },
+                "title": "StepExportImageParams",
+                "type": "object"
+              }
+            },
+            "required": [
+              "name"
+            ],
+            "title": "Export Image",
+            "type": "object"
+          },
+          {
+            "description": "utility step",
+            "properties": {
+              "name": {
+                "const": "export_mask_as_image"
+              },
+              "params": {
+                "additionalProperties": false,
+                "description": "Parameters for `export_mask_as_image`.",
+                "properties": {
+                  "color": {
+                    "anyOf": [
+                      {
+                        "format": "color",
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "default": null,
+                    "title": "Color"
+                  },
+                  "mask": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "default": null,
+                    "title": "Mask"
+                  },
+                  "out_file": {
+                    "anyOf": [
+                      {
+                        "format": "file-path",
+                        "type": "string"
+                      },
+                      {
+                        "format": "path",
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "default": null,
+                    "title": "Out File"
+                  }
+                },
+                "title": "StepExportMaskAsImageParams",
+                "type": "object"
+              }
+            },
+            "required": [
+              "name"
+            ],
+            "title": "Export Mask as Image",
+            "type": "object"
+          },
+          {
+            "description": "utility step",
+            "properties": {
+              "name": {
+                "const": "export_spectra"
+              },
+              "params": {
+                "additionalProperties": false,
+                "description": "Parameters for `export_spectra`.",
+                "properties": {
+                  "format_name": {
+                    "title": "Format Name",
+                    "type": "string"
+                  },
+                  "format_params": {
+                    "anyOf": [
+                      {
+                        "additionalProperties": true,
+                        "type": "object"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "default": null,
+                    "title": "Format Params"
+                  },
+                  "out_file": {
+                    "anyOf": [
+                      {
+                        "format": "file-path",
+                        "type": "string"
+                      },
+                      {
+                        "format": "path",
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "default": null,
+                    "title": "Out File"
+                  }
+                },
+                "required": [
+                  "format_name"
+                ],
+                "title": "StepExportSpectraParams",
+                "type": "object"
+              }
+            },
+            "required": [
+              "name"
+            ],
+            "title": "Export Spectra",
+            "type": "object"
+          },
+          {
+            "description": "utility step",
+            "properties": {
+              "name": {
+                "const": "export_spectra_from_image_group"
+              },
+              "params": {
+                "additionalProperties": false,
+                "description": "Parameters for `export_spectra_from_image_group`.",
+                "properties": {
+                  "group_id": {
+                    "title": "Group Id",
+                    "type": "string"
+                  },
+                  "out_file": {
+                    "anyOf": [
+                      {
+                        "format": "file-path",
+                        "type": "string"
+                      },
+                      {
+                        "format": "path",
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "default": null,
+                    "title": "Out File"
+                  }
+                },
+                "required": [
+                  "group_id"
+                ],
+                "title": "StepExportListSpectraImageGroupParams",
+                "type": "object"
+              }
+            },
+            "required": [
+              "name"
+            ],
+            "title": "Export Spectra from Image Group",
+            "type": "object"
+          },
+          {
+            "description": "utility step",
+            "properties": {
+              "name": {
+                "const": "export_spectra_from_mask_group"
+              },
+              "params": {
+                "additionalProperties": false,
+                "description": "Parameters for `export_spectra_from_mask_group`.",
+                "properties": {
+                  "group_id": {
+                    "title": "Group Id",
+                    "type": "string"
+                  },
+                  "out_file": {
+                    "anyOf": [
+                      {
+                        "format": "file-path",
+                        "type": "string"
+                      },
+                      {
+                        "format": "path",
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "default": null,
+                    "title": "Out File"
+                  }
+                },
+                "required": [
+                  "group_id"
+                ],
+                "title": "StepExportListSpectraMaskGroupParams",
+                "type": "object"
+              }
+            },
+            "required": [
+              "name"
+            ],
+            "title": "Export Spectra from Mask Group",
+            "type": "object"
+          },
+          {
+            "description": "utility step",
+            "properties": {
+              "name": {
+                "const": "export_spectrum"
+              },
+              "params": {
+                "additionalProperties": false,
+                "description": "Parameters for `export_spectrum`.",
+                "properties": {
+                  "add_mask_metadata": {
+                    "default": false,
+                    "title": "Add Mask Metadata",
+                    "type": "boolean"
+                  },
+                  "additional_info": {
+                    "anyOf": [
+                      {
+                        "additionalProperties": {
+                          "anyOf": [
+                            {
+                              "type": "string"
+                            },
+                            {
+                              "type": "number"
+                            }
+                          ]
+                        },
+                        "type": "object"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "default": null,
+                    "title": "Additional Info"
+                  },
+                  "agg": {
+                    "anyOf": [
+                      {
+                        "enum": [
+                          "mean",
+                          "median",
+                          "mean95",
+                          "std",
+                          "max",
+                          "min"
+                        ],
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "default": "mean",
+                    "title": "Agg"
+                  },
+                  "as_dataframe": {
+                    "anyOf": [
+                      {
+                        "type": "boolean"
+                      },
+                      {
+                        "enum": [
+                          "pandas",
+                          "polars"
+                        ],
+                        "type": "string"
+                      }
+                    ],
+                    "default": false,
+                    "title": "As Dataframe"
+                  },
+                  "format": {
+                    "default": "csv",
+                    "title": "Format",
+                    "type": "string"
+                  },
+                  "ignore_empty_mask": {
+                    "default": false,
+                    "title": "Ignore Empty Mask",
+                    "type": "boolean"
+                  },
+                  "mask": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "default": null,
+                    "title": "Mask"
+                  },
+                  "out_file": {
+                    "anyOf": [
+                      {
+                        "format": "file-path",
+                        "type": "string"
+                      },
+                      {
+                        "format": "path",
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "default": null,
+                    "title": "Out File"
+                  },
+                  "transpose": {
+                    "default": false,
+                    "title": "Transpose",
+                    "type": "boolean"
+                  }
+                },
+                "title": "StepExportSpectrumParams",
+                "type": "object"
+              }
+            },
+            "required": [
+              "name"
+            ],
+            "title": "Export Spectrum",
+            "type": "object"
+          },
+          {
+            "description": "processing step",
+            "properties": {
+              "name": {
+                "const": "flip"
+              },
+              "params": {
+                "additionalProperties": false,
+                "description": "Parameters for `flip`.",
+                "properties": {
+                  "axis_to_flip": {
+                    "$ref": "#/$defs/step.flip.SpatialAxis"
+                  }
+                },
+                "required": [
+                  "axis_to_flip"
+                ],
+                "title": "StepMapFlipParams",
+                "type": "object"
+              }
+            },
+            "required": [
+              "name"
+            ],
+            "title": "Flip map",
+            "type": "object"
+          },
+          {
+            "description": "analysis step",
+            "properties": {
+              "name": {
+                "const": "identify_substrate"
+              },
+              "params": {
+                "additionalProperties": false,
+                "description": "Parameters for `substrate_extraction`.",
+                "properties": {
+                  "erosion": {
+                    "default": 0,
+                    "title": "Erosion",
+                    "type": "integer"
+                  },
+                  "mask": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "default": null,
+                    "title": "Mask"
+                  },
+                  "method": {
+                    "default": "kmeans",
+                    "enum": [
+                      "kmeans",
+                      "minibatchkmeans",
+                      "hierarchical"
+                    ],
+                    "title": "Method",
+                    "type": "string"
+                  },
+                  "morphology_clean": {
+                    "default": true,
+                    "title": "Morphology Clean",
+                    "type": "boolean"
+                  },
+                  "morphology_minsize": {
+                    "default": 64,
+                    "title": "Morphology Minsize",
+                    "type": "integer"
+                  },
+                  "n_clusters": {
+                    "default": 2,
+                    "title": "N Clusters",
+                    "type": "integer"
+                  },
+                  "normalize_kwargs": {
+                    "anyOf": [
+                      {
+                        "$ref": "#/$defs/step.identify_substrate.StepNormalizeParams"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "default": null
+                  },
+                  "pca_n_components": {
+                    "anyOf": [
+                      {
+                        "type": "integer"
+                      },
+                      {
+                        "type": "number"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "default": 0,
+                    "title": "Pca N Components"
+                  },
+                  "roi_x": {
+                    "anyOf": [
+                      {
+                        "maxItems": 2,
+                        "minItems": 2,
+                        "prefixItems": [
+                          {
+                            "type": "number"
+                          },
+                          {
+                            "type": "number"
+                          }
+                        ],
+                        "type": "array"
+                      },
+                      {
+                        "items": {
+                          "maxItems": 2,
+                          "minItems": 2,
+                          "prefixItems": [
+                            {
+                              "type": "number"
+                            },
+                            {
+                              "type": "number"
+                            }
+                          ],
+                          "type": "array"
+                        },
+                        "type": "array"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "default": null,
+                    "title": "Roi X"
+                  }
+                },
+                "title": "StepCellSegmentationParams",
+                "type": "object"
+              }
+            },
+            "required": [
+              "name"
+            ],
+            "title": "Identify Substrate",
+            "type": "object"
+          },
+          {
+            "description": "utility step",
+            "properties": {
+              "name": {
+                "const": "import_mask"
+              },
+              "params": {
+                "additionalProperties": false,
+                "description": "Parameters for `import_mask`.",
+                "properties": {
+                  "id": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "title": "Id"
+                  },
+                  "mask_path": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "default": null,
+                    "title": "Mask Path"
+                  }
+                },
+                "title": "StepImportMaskParams",
+                "type": "object"
+              }
+            },
+            "required": [
+              "name"
+            ],
+            "title": "Import Mask",
+            "type": "object"
+          },
+          {
+            "description": "utility step",
+            "properties": {
+              "name": {
+                "const": "mask_from_image"
+              },
+              "params": {
+                "additionalProperties": false,
+                "description": "Parameters for `mask_from_image`.",
+                "properties": {
+                  "id": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "title": "Id"
+                  },
+                  "image_id": {
+                    "title": "Image Id",
+                    "type": "string"
+                  },
+                  "invert": {
+                    "default": false,
+                    "title": "Invert",
+                    "type": "boolean"
+                  },
+                  "relative": {
+                    "default": false,
+                    "title": "Relative",
+                    "type": "boolean"
+                  },
+                  "threshold_down": {
+                    "anyOf": [
+                      {
+                        "type": "number"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "default": null,
+                    "title": "Threshold Down"
+                  },
+                  "threshold_up": {
+                    "anyOf": [
+                      {
+                        "type": "number"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "default": null,
+                    "title": "Threshold Up"
+                  }
+                },
+                "required": [
+                  "image_id"
+                ],
+                "title": "StepMaskFromImageParams",
+                "type": "object"
+              }
+            },
+            "required": [
+              "name"
+            ],
+            "title": "Create Mask from Thresholded Image",
+            "type": "object"
+          },
+          {
+            "description": "utility step",
+            "properties": {
+              "name": {
+                "const": "mask_operation"
+              },
+              "params": {
+                "additionalProperties": false,
+                "description": "Parameters for `mask_operation`.",
+                "properties": {
+                  "A": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "default": null,
+                    "title": "A"
+                  },
+                  "B": {
+                    "title": "B",
+                    "type": "string"
+                  },
+                  "id": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "title": "Id"
+                  },
+                  "operation": {
+                    "default": "union",
+                    "enum": [
+                      "diff",
+                      "union",
+                      "intersection"
+                    ],
+                    "title": "Operation",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "B"
+                ],
+                "title": "StepMaskOperationParams",
+                "type": "object"
+              }
+            },
+            "required": [
+              "name"
+            ],
+            "title": "Mask Operation",
+            "type": "object"
+          },
+          {
+            "description": "utility step",
+            "properties": {
+              "name": {
+                "const": "mask_threshold"
+              },
+              "params": {
+                "additionalProperties": false,
+                "description": "Parameters for `mask_threshold`.",
+                "properties": {
+                  "agg": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "default": null,
+                    "title": "Agg"
+                  },
+                  "id": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "title": "Id"
+                  },
+                  "roi_x": {
+                    "anyOf": [
+                      {
+                        "maxItems": 2,
+                        "minItems": 2,
+                        "prefixItems": [
+                          {
+                            "type": "number"
+                          },
+                          {
+                            "type": "number"
+                          }
+                        ],
+                        "type": "array"
+                      },
+                      {
+                        "items": {
+                          "maxItems": 2,
+                          "minItems": 2,
+                          "prefixItems": [
+                            {
+                              "type": "number"
+                            },
+                            {
+                              "type": "number"
+                            }
+                          ],
+                          "type": "array"
+                        },
+                        "type": "array"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "default": null,
+                    "title": "Roi X"
+                  },
+                  "vmax": {
+                    "anyOf": [
+                      {
+                        "type": "number"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "default": null,
+                    "title": "Vmax"
+                  },
+                  "vmin": {
+                    "anyOf": [
+                      {
+                        "type": "number"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "default": null,
+                    "title": "Vmin"
+                  }
+                },
+                "title": "StepMaskThresholdParams",
+                "type": "object"
+              }
+            },
+            "required": [
+              "name"
+            ],
+            "title": "Create Mask from Thresholded Aggregated Spectral Data",
+            "type": "object"
+          },
+          {
+            "description": "utility step",
+            "properties": {
+              "name": {
+                "const": "math_operation"
+              },
+              "params": {
+                "additionalProperties": false,
+                "description": "Parameters for `math_operation`.",
+                "properties": {
+                  "A": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "default": null,
+                    "title": "A"
+                  },
+                  "B": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "number"
+                      }
+                    ],
+                    "default": 0,
+                    "title": "B"
+                  },
+                  "aggregate_B": {
+                    "default": "mean",
+                    "title": "Aggregate B",
+                    "type": "string"
+                  },
+                  "operation": {
+                    "default": "sub",
+                    "enum": [
+                      "sub",
+                      "add"
+                    ],
+                    "title": "Operation",
+                    "type": "string"
+                  },
+                  "roi_x": {
+                    "anyOf": [
+                      {
+                        "maxItems": 2,
+                        "minItems": 2,
+                        "prefixItems": [
+                          {
+                            "type": "number"
+                          },
+                          {
+                            "type": "number"
+                          }
+                        ],
+                        "type": "array"
+                      },
+                      {
+                        "items": {
+                          "maxItems": 2,
+                          "minItems": 2,
+                          "prefixItems": [
+                            {
+                              "type": "number"
+                            },
+                            {
+                              "type": "number"
+                            }
+                          ],
+                          "type": "array"
+                        },
+                        "type": "array"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "default": null,
+                    "title": "Roi X"
+                  }
+                },
+                "title": "StepMathOperationParams",
+                "type": "object"
+              }
+            },
+            "required": [
+              "name"
+            ],
+            "title": "Math Operation",
+            "type": "object"
+          },
+          {
+            "description": "analysis step",
+            "properties": {
+              "name": {
+                "const": "mcr"
+              },
+              "params": {
+                "additionalProperties": false,
+                "description": "Parameters for the MCR step.",
+                "properties": {
+                  "concentration_constraints": {
+                    "anyOf": [
+                      {
+                        "items": {
+                          "enum": [
+                            "non-negative",
+                            "sum-to-1",
+                            "endpoints-to-0"
+                          ],
+                          "type": "string"
+                        },
+                        "type": "array"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "default": null,
+                    "title": "Concentration Constraints"
+                  },
+                  "concentration_regressor": {
+                    "default": "OLS",
+                    "enum": [
+                      "OLS",
+                      "NNLS",
+                      "Ridge",
+                      "LASSO"
+                    ],
+                    "title": "Concentration Regressor",
+                    "type": "string"
+                  },
+                  "concentration_regressor_kwargs": {
+                    "anyOf": [
+                      {
+                        "additionalProperties": true,
+                        "type": "object"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "default": null,
+                    "title": "Concentration Regressor Kwargs"
+                  },
+                  "id": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "title": "Id"
+                  },
+                  "initial_estimate_method": {
+                    "anyOf": [
+                      {
+                        "enum": [
+                          "SVD",
+                          "PCA",
+                          "reference_spectra"
+                        ],
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "default": null,
+                    "title": "Initial Estimate Method"
+                  },
+                  "mask": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "default": null,
+                    "title": "Mask"
+                  },
+                  "n_components": {
+                    "anyOf": [
+                      {
+                        "type": "integer"
+                      },
+                      {
+                        "type": "number"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "default": 0.9,
+                    "title": "N Components"
+                  },
+                  "phantom_baseline_endmember": {
+                    "default": false,
+                    "title": "Phantom Baseline Endmember",
+                    "type": "boolean"
+                  },
+                  "reference_spectra": {
+                    "anyOf": [
+                      {
+                        "items": {
+                          "type": "string"
+                        },
+                        "type": "array"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "default": null,
+                    "title": "Reference Spectra"
+                  },
+                  "roi_x": {
+                    "anyOf": [
+                      {
+                        "maxItems": 2,
+                        "minItems": 2,
+                        "prefixItems": [
+                          {
+                            "type": "number"
+                          },
+                          {
+                            "type": "number"
+                          }
+                        ],
+                        "type": "array"
+                      },
+                      {
+                        "items": {
+                          "maxItems": 2,
+                          "minItems": 2,
+                          "prefixItems": [
+                            {
+                              "type": "number"
+                            },
+                            {
+                              "type": "number"
+                            }
+                          ],
+                          "type": "array"
+                        },
+                        "type": "array"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "default": null,
+                    "title": "Roi X"
+                  },
+                  "spectra_constraints": {
+                    "anyOf": [
+                      {
+                        "items": {
+                          "enum": [
+                            "non-negative",
+                            "sum-to-1",
+                            "endpoints-to-0"
+                          ],
+                          "type": "string"
+                        },
+                        "type": "array"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "default": null,
+                    "title": "Spectra Constraints"
+                  },
+                  "spectra_regressor": {
+                    "default": "OLS",
+                    "enum": [
+                      "OLS",
+                      "NNLS",
+                      "Ridge",
+                      "LASSO"
+                    ],
+                    "title": "Spectra Regressor",
+                    "type": "string"
+                  },
+                  "spectra_regressor_kwargs": {
+                    "anyOf": [
+                      {
+                        "additionalProperties": true,
+                        "type": "object"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "default": null,
+                    "title": "Spectra Regressor Kwargs"
+                  },
+                  "work_dtype": {
+                    "default": "float32",
+                    "enum": [
+                      "float32",
+                      "float64"
+                    ],
+                    "title": "Work Dtype",
+                    "type": "string"
+                  }
+                },
+                "title": "StepMCRParams",
+                "type": "object"
+              }
+            },
+            "required": [
+              "name"
+            ],
+            "title": "MCR",
+            "type": "object"
+          },
+          {
+            "description": "utility step",
+            "properties": {
+              "name": {
+                "const": "new_mask_from_indices"
+              },
+              "params": {
+                "additionalProperties": false,
+                "description": "Parameters for `new_mask_from_indices`.",
+                "properties": {
+                  "color": {
+                    "anyOf": [
+                      {
+                        "format": "color",
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "default": null,
+                    "title": "Color"
+                  },
+                  "id": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "title": "Id"
+                  },
+                  "idxs": {
+                    "items": {
+                      "type": "integer"
+                    },
+                    "title": "Idxs",
+                    "type": "array"
+                  },
+                  "name": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "default": "New Mask",
+                    "title": "Name"
+                  }
+                },
+                "required": [
+                  "idxs"
+                ],
+                "title": "StepNewMaskFromIndicesParams",
+                "type": "object"
+              }
+            },
+            "required": [
+              "name"
+            ],
+            "title": "New Mask from Indices",
+            "type": "object"
+          },
+          {
+            "description": "analysis step",
+            "properties": {
+              "name": {
+                "const": "nfindr"
+              },
+              "params": {
+                "additionalProperties": false,
+                "description": "Parameters for the `nfindr` step.",
+                "properties": {
+                  "gen_endmember_masks": {
+                    "default": false,
+                    "title": "Gen Endmember Masks",
+                    "type": "boolean"
+                  },
+                  "id": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "title": "Id"
+                  },
+                  "mask": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "default": null,
+                    "title": "Mask"
+                  },
+                  "n_endmembers": {
+                    "exclusiveMinimum": 1,
+                    "title": "N Endmembers",
+                    "type": "integer"
+                  },
+                  "normalize_concentrations": {
+                    "default": false,
+                    "title": "Normalize Concentrations",
+                    "type": "boolean"
+                  },
+                  "roi_x": {
+                    "anyOf": [
+                      {
+                        "maxItems": 2,
+                        "minItems": 2,
+                        "prefixItems": [
+                          {
+                            "type": "number"
+                          },
+                          {
+                            "type": "number"
+                          }
+                        ],
+                        "type": "array"
+                      },
+                      {
+                        "items": {
+                          "maxItems": 2,
+                          "minItems": 2,
+                          "prefixItems": [
+                            {
+                              "type": "number"
+                            },
+                            {
+                              "type": "number"
+                            }
+                          ],
+                          "type": "array"
+                        },
+                        "type": "array"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "default": null,
+                    "title": "Roi X"
+                  },
+                  "transform_method": {
+                    "default": "nnls",
+                    "enum": [
+                      "nnls",
+                      "barycentric"
+                    ],
+                    "title": "Transform Method",
+                    "type": "string"
+                  },
+                  "work_dtype": {
+                    "anyOf": [
+                      {
+                        "enum": [
+                          "float32",
+                          "float64"
+                        ],
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "default": null,
+                    "title": "Work Dtype"
+                  }
+                },
+                "required": [
+                  "n_endmembers"
+                ],
+                "title": "StepNFINDRParams",
+                "type": "object"
+              }
+            },
+            "required": [
+              "name"
+            ],
+            "title": "N-FINDR",
+            "type": "object"
+          },
+          {
+            "description": "processing step",
+            "properties": {
+              "name": {
+                "const": "normalize"
+              },
+              "params": {
+                "additionalProperties": false,
+                "description": "Parameters for normalization step.",
+                "properties": {
+                  "by_pixel": {
+                    "default": true,
+                    "title": "By Pixel",
+                    "type": "boolean"
+                  },
+                  "mask": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "default": null,
+                    "title": "Mask"
+                  },
+                  "norm": {
+                    "default": "l2",
+                    "enum": [
+                      "l1",
+                      "l2",
+                      "max",
+                      "scale",
+                      "minmax_scale",
+                      "frobenius",
+                      "spectral_position",
+                      "area"
+                    ],
+                    "title": "Norm",
+                    "type": "string"
+                  },
+                  "roi_x": {
+                    "anyOf": [
+                      {
+                        "maxItems": 2,
+                        "minItems": 2,
+                        "prefixItems": [
+                          {
+                            "type": "number"
+                          },
+                          {
+                            "type": "number"
+                          }
+                        ],
+                        "type": "array"
+                      },
+                      {
+                        "items": {
+                          "maxItems": 2,
+                          "minItems": 2,
+                          "prefixItems": [
+                            {
+                              "type": "number"
+                            },
+                            {
+                              "type": "number"
+                            }
+                          ],
+                          "type": "array"
+                        },
+                        "type": "array"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "default": null,
+                    "title": "Roi X"
+                  },
+                  "separate_regions": {
+                    "default": false,
+                    "title": "Separate Regions",
+                    "type": "boolean"
+                  },
+                  "wn": {
+                    "anyOf": [
+                      {
+                        "type": "number"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "default": null,
+                    "title": "Wn"
+                  }
+                },
+                "title": "StepNormalizeParams",
+                "type": "object"
+              }
+            },
+            "required": [
+              "name"
+            ],
+            "title": "Normalize",
+            "type": "object"
+          },
+          {
+            "description": "analysis step",
+            "properties": {
+              "name": {
+                "const": "pca"
+              },
+              "params": {
+                "additionalProperties": false,
+                "description": "Parameters for `principal_components`.",
+                "properties": {
+                  "compute_residuals": {
+                    "default": false,
+                    "title": "Compute Residuals",
+                    "type": "boolean"
+                  },
+                  "id": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "title": "Id"
+                  },
+                  "mask": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "default": null,
+                    "title": "Mask"
+                  },
+                  "normalize_kwargs": {
+                    "anyOf": [
+                      {
+                        "$ref": "#/$defs/step.pca.StepNormalizeParams"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "default": null
+                  },
+                  "pca_n_components": {
+                    "anyOf": [
+                      {
+                        "type": "integer"
+                      },
+                      {
+                        "type": "number"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "default": 0,
+                    "title": "Pca N Components"
+                  },
+                  "roi_x": {
+                    "anyOf": [
+                      {
+                        "maxItems": 2,
+                        "minItems": 2,
+                        "prefixItems": [
+                          {
+                            "type": "number"
+                          },
+                          {
+                            "type": "number"
+                          }
+                        ],
+                        "type": "array"
+                      },
+                      {
+                        "items": {
+                          "maxItems": 2,
+                          "minItems": 2,
+                          "prefixItems": [
+                            {
+                              "type": "number"
+                            },
+                            {
+                              "type": "number"
+                            }
+                          ],
+                          "type": "array"
+                        },
+                        "type": "array"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "default": null,
+                    "title": "Roi X"
+                  }
+                },
+                "title": "StepPrincipalComponentsParams",
+                "type": "object"
+              }
+            },
+            "required": [
+              "name"
+            ],
+            "title": "PCA",
+            "type": "object"
+          },
+          {
+            "description": "visualization step",
+            "properties": {
+              "name": {
+                "const": "plot_group_spectra"
+              },
+              "params": {
+                "additionalProperties": false,
+                "description": "Parameters for `plot_group_spectra`.",
+                "properties": {
+                  "figsize": {
+                    "default": [
+                      16,
+                      8
+                    ],
+                    "maxItems": 2,
+                    "minItems": 2,
+                    "prefixItems": [
+                      {
+                        "type": "integer"
+                      },
+                      {
+                        "type": "integer"
+                      }
+                    ],
+                    "title": "Figsize",
+                    "type": "array"
+                  },
+                  "image_group_id": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "default": null,
+                    "title": "Image Group Id"
+                  },
+                  "mask_group_id": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "default": null,
+                    "title": "Mask Group Id"
+                  },
+                  "out_file": {
+                    "anyOf": [
+                      {
+                        "format": "file-path",
+                        "type": "string"
+                      },
+                      {
+                        "format": "path",
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "default": null,
+                    "title": "Out File"
+                  },
+                  "title": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "default": null,
+                    "title": "Title"
+                  },
+                  "x_label": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "default": null,
+                    "title": "X Label"
+                  },
+                  "y_label": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "default": null,
+                    "title": "Y Label"
+                  }
+                },
+                "title": "StepPlotGroupSpectraParams",
+                "type": "object"
+              }
+            },
+            "required": [
+              "name"
+            ],
+            "title": "Plot Group Spectra",
+            "type": "object"
+          },
+          {
+            "description": "visualization step",
+            "properties": {
+              "name": {
+                "const": "plot_spectra_pixels"
+              },
+              "params": {
+                "additionalProperties": false,
+                "description": "Parameters for `plot_spectra`.",
+                "properties": {
+                  "figsize": {
+                    "default": [
+                      16,
+                      8
+                    ],
+                    "maxItems": 2,
+                    "minItems": 2,
+                    "prefixItems": [
+                      {
+                        "type": "integer"
+                      },
+                      {
+                        "type": "integer"
+                      }
+                    ],
+                    "title": "Figsize",
+                    "type": "array"
+                  },
+                  "idx": {
+                    "anyOf": [
+                      {
+                        "type": "integer"
+                      },
+                      {
+                        "items": {
+                          "type": "integer"
+                        },
+                        "type": "array"
+                      },
+                      {
+                        "maxItems": 1,
+                        "minItems": 1,
+                        "prefixItems": [
+                          {
+                            "type": "integer"
+                          }
+                        ],
+                        "type": "array"
+                      }
+                    ],
+                    "default": 0,
+                    "title": "Idx"
+                  },
+                  "out_file": {
+                    "anyOf": [
+                      {
+                        "format": "file-path",
+                        "type": "string"
+                      },
+                      {
+                        "format": "path",
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "default": null,
+                    "title": "Out File"
+                  }
+                },
+                "title": "StepPlotSpectraPixelsParams",
+                "type": "object"
+              }
+            },
+            "required": [
+              "name"
+            ],
+            "title": "Plot Pixel Spectra",
+            "type": "object"
+          },
+          {
+            "description": "utility step",
+            "properties": {
+              "name": {
+                "const": "refine_mask"
+              },
+              "params": {
+                "additionalProperties": false,
+                "description": "Parameters for `refine_mask`.",
+                "properties": {
+                  "erosion": {
+                    "default": 0,
+                    "title": "Erosion",
+                    "type": "integer"
+                  },
+                  "mask_id": {
+                    "title": "Mask Id",
+                    "type": "string"
+                  },
+                  "morphology_minsize": {
+                    "anyOf": [
+                      {
+                        "type": "integer"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "default": null,
+                    "title": "Morphology Minsize"
+                  }
+                },
+                "required": [
+                  "mask_id"
+                ],
+                "title": "StepRefineMaskParams",
+                "type": "object"
+              }
+            },
+            "required": [
+              "name"
+            ],
+            "title": "Refine Mask",
+            "type": "object"
+          },
+          {
+            "description": "processing step",
+            "properties": {
+              "name": {
+                "const": "resample"
+              },
+              "params": {
+                "additionalProperties": false,
+                "description": "Parameters for `resample`.",
+                "properties": {
+                  "method": {
+                    "default": "spline",
+                    "enum": [
+                      "spline",
+                      "whittaker"
+                    ],
+                    "title": "Method",
+                    "type": "string"
+                  },
+                  "ref_spectrum_id": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "default": null,
+                    "title": "Ref Spectrum Id"
+                  },
+                  "roi_x": {
+                    "anyOf": [
+                      {
+                        "maxItems": 2,
+                        "minItems": 2,
+                        "prefixItems": [
+                          {
+                            "type": "number"
+                          },
+                          {
+                            "type": "number"
+                          }
+                        ],
+                        "type": "array"
+                      },
+                      {
+                        "items": {
+                          "maxItems": 2,
+                          "minItems": 2,
+                          "prefixItems": [
+                            {
+                              "type": "number"
+                            },
+                            {
+                              "type": "number"
+                            }
+                          ],
+                          "type": "array"
+                        },
+                        "type": "array"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "default": null,
+                    "title": "Roi X"
+                  },
+                  "spectrum_step": {
+                    "anyOf": [
+                      {
+                        "type": "number"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "default": null,
+                    "title": "Spectrum Step"
+                  },
+                  "spline_kind": {
+                    "anyOf": [
+                      {
+                        "enum": [
+                          "zero",
+                          "slinear",
+                          "quadratic",
+                          "cubic"
+                        ],
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "default": "cubic",
+                    "title": "Spline Kind"
+                  }
+                },
+                "title": "StepResampleParams",
+                "type": "object"
+              }
+            },
+            "required": [
+              "name"
+            ],
+            "title": "Resample",
+            "type": "object"
+          },
+          {
+            "description": "visualization step",
+            "properties": {
+              "name": {
+                "const": "rgb_image"
+              },
+              "params": {
+                "additionalProperties": false,
+                "description": "Parameters for `rgb_image`.",
+                "properties": {
+                  "b_id": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "default": null,
+                    "title": "B Id"
+                  },
+                  "g_id": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "default": null,
+                    "title": "G Id"
+                  },
+                  "id": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "title": "Id"
+                  },
+                  "name": {
+                    "default": "RGB Composite",
+                    "title": "Name",
+                    "type": "string"
+                  },
+                  "r_id": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "default": null,
+                    "title": "R Id"
+                  },
+                  "visible": {
+                    "default": true,
+                    "title": "Visible",
+                    "type": "boolean"
+                  }
+                },
+                "title": "RGBImageParams",
+                "type": "object"
+              }
+            },
+            "required": [
+              "name"
+            ],
+            "title": "RGB Composite Image",
+            "type": "object"
+          },
+          {
+            "description": "processing step",
+            "properties": {
+              "name": {
+                "const": "rotate"
+              },
+              "params": {
+                "additionalProperties": false,
+                "description": "Parameters for `rotate`.",
+                "properties": {
+                  "degrees": {
+                    "enum": [
+                      -90,
+                      90,
+                      180,
+                      -180,
+                      270,
+                      -270,
+                      0,
+                      360
+                    ],
+                    "title": "Degrees",
+                    "type": "integer"
+                  }
+                },
+                "required": [
+                  "degrees"
+                ],
+                "title": "StepMapRotationParams",
+                "type": "object"
+              }
+            },
+            "required": [
+              "name"
+            ],
+            "title": "Rotate",
+            "type": "object"
+          },
+          {
+            "description": "processing step",
+            "properties": {
+              "name": {
+                "const": "smooth_spatial"
+              },
+              "params": {
+                "discriminator": {
+                  "mapping": {
+                    "gaussian": "#/$defs/StepSmoothMapParamsGaussian",
+                    "median": "#/$defs/StepSmoothMapParamsMedian"
+                  },
+                  "propertyName": "method"
+                },
+                "oneOf": [
+                  {
+                    "$ref": "#/$defs/step.smooth_spatial.StepSmoothMapParamsMedian"
+                  },
+                  {
+                    "$ref": "#/$defs/step.smooth_spatial.StepSmoothMapParamsGaussian"
+                  }
+                ]
+              }
+            },
+            "required": [
+              "name"
+            ],
+            "title": "Smooth Spatial",
+            "type": "object"
+          },
+          {
+            "description": "processing step",
+            "properties": {
+              "name": {
+                "const": "smooth_spectral"
+              },
+              "params": {
+                "discriminator": {
+                  "mapping": {
+                    "savgol": "#/$defs/StepSmoothSpectrumParamsSavGol",
+                    "whittaker": "#/$defs/StepSmoothSpectrumParamsWhittaker"
+                  },
+                  "propertyName": "method"
+                },
+                "oneOf": [
+                  {
+                    "$ref": "#/$defs/step.smooth_spectral.StepSmoothSpectrumParamsWhittaker"
+                  },
+                  {
+                    "$ref": "#/$defs/step.smooth_spectral.StepSmoothSpectrumParamsSavGol"
+                  }
+                ]
+              }
+            },
+            "required": [
+              "name"
+            ],
+            "title": "Smooth Spectral",
+            "type": "object"
+          },
+          {
+            "description": "processing step",
+            "properties": {
+              "name": {
+                "const": "smooth_svd"
+              },
+              "params": {
+                "additionalProperties": false,
+                "description": "Parameters for `smooth_svd`.",
+                "properties": {
+                  "method": {
+                    "default": "spatial_ratio",
+                    "enum": [
+                      "manual",
+                      "spatial_ratio"
+                    ],
+                    "title": "Method",
+                    "type": "string"
+                  },
+                  "num_sv": {
+                    "anyOf": [
+                      {
+                        "type": "integer"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "default": null,
+                    "title": "Num Sv"
+                  },
+                  "roi_threshold": {
+                    "default": 0.5,
+                    "title": "Roi Threshold",
+                    "type": "number"
+                  },
+                  "separate_regions": {
+                    "default": false,
+                    "title": "Separate Regions",
+                    "type": "boolean"
+                  },
+                  "spatial_ratio_threshold_multiplier": {
+                    "default": 3.5,
+                    "title": "Spatial Ratio Threshold Multiplier",
+                    "type": "number"
+                  }
+                },
+                "title": "StepSmoothSVDParams",
+                "type": "object"
+              }
+            },
+            "required": [
+              "name"
+            ],
+            "title": "Smooth (SVD)",
+            "type": "object"
+          },
+          {
+            "description": "analysis step",
+            "properties": {
+              "name": {
+                "const": "spectral_fitting"
+              },
+              "params": {
+                "additionalProperties": false,
+                "description": "Parameters for `spectral_fitting`.",
+                "properties": {
+                  "id": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "title": "Id"
+                  },
+                  "mask": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "default": null,
+                    "title": "Mask"
+                  },
+                  "method": {
+                    "default": "SAM",
+                    "enum": [
+                      "SAM",
+                      "SCM",
+                      "SID",
+                      "pearson",
+                      "r2_score"
+                    ],
+                    "title": "Method",
+                    "type": "string"
+                  },
+                  "norm": {
+                    "anyOf": [
+                      {
+                        "enum": [
+                          "l1",
+                          "l2",
+                          "max",
+                          "scale",
+                          "minmax_scale",
+                          "frobenius"
+                        ],
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "default": null,
+                    "title": "Norm"
+                  },
+                  "ref_spectra": {
+                    "title": "Ref Spectra",
+                    "type": "string"
+                  },
+                  "roi_x": {
+                    "anyOf": [
+                      {
+                        "maxItems": 2,
+                        "minItems": 2,
+                        "prefixItems": [
+                          {
+                            "type": "number"
+                          },
+                          {
+                            "type": "number"
+                          }
+                        ],
+                        "type": "array"
+                      },
+                      {
+                        "items": {
+                          "maxItems": 2,
+                          "minItems": 2,
+                          "prefixItems": [
+                            {
+                              "type": "number"
+                            },
+                            {
+                              "type": "number"
+                            }
+                          ],
+                          "type": "array"
+                        },
+                        "type": "array"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "default": null,
+                    "title": "Roi X"
+                  }
+                },
+                "required": [
+                  "ref_spectra"
+                ],
+                "title": "StepSpectralFittingParams",
+                "type": "object"
+              }
+            },
+            "required": [
+              "name"
+            ],
+            "title": "Spectral Fitting",
+            "type": "object"
+          },
+          {
+            "description": "visualization step",
+            "properties": {
+              "name": {
+                "const": "spectral_projection_image"
+              },
+              "params": {
+                "additionalProperties": false,
+                "description": "Parameters for `intensity_image`.",
+                "properties": {
+                  "data_rules": {
+                    "anyOf": [
+                      {
+                        "$ref": "#/$defs/step.spectral_projection_image.DataRules"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "default": null
+                  },
+                  "id": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "title": "Id"
+                  },
+                  "name": {
+                    "default": "Spectral Projection Image",
+                    "title": "Name",
+                    "type": "string"
+                  },
+                  "visible": {
+                    "default": true,
+                    "title": "Visible",
+                    "type": "boolean"
+                  },
+                  "viz_rules": {
+                    "anyOf": [
+                      {
+                        "$ref": "#/$defs/step.spectral_projection_image.VizRules"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "default": null
+                  }
+                },
+                "title": "IntensityImageParams",
+                "type": "object"
+              }
+            },
+            "required": [
+              "name"
+            ],
+            "title": "Spectral Projection Image",
+            "type": "object"
+          },
+          {
+            "description": "processing step",
+            "properties": {
+              "name": {
+                "const": "subtract_scaled_spectrum"
+              },
+              "params": {
+                "additionalProperties": false,
+                "description": "Subtract a spectrum from each pixel using a per-pixel coefficient map.\n\nThis step computes:\n    :math:`corrected(x, y, lambda) = cube(x, y, lambda) - coeff(x, y) * spectrum(lambda)`\n\nNotes\n-----\n- Raw abundance is used by default (no normalization).\n- Spectrum ids can refer to: external spectra, mask spectra, or image-attached spectra.\n  When ids clash between masks and images, image-attached spectra are preferred.",
+                "properties": {
+                  "abundance_image_id": {
+                    "description": "Identifier of the image providing per-pixel coefficients.",
+                    "title": "Abundance Image Id",
+                    "type": "string"
+                  },
+                  "invert_abundance": {
+                    "default": false,
+                    "description": "Whether to take the opposite of the abundance map before applying it, effectively inverting the scaling.",
+                    "title": "Invert Abundance",
+                    "type": "boolean"
+                  },
+                  "scale_abundance": {
+                    "default": false,
+                    "description": "Whether to linearly scale the abundance map to [0, 1] before applying it.",
+                    "title": "Scale Abundance",
+                    "type": "boolean"
+                  },
+                  "spectrum_id": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "default": null,
+                    "description": "Identifier of the reference spectrum to subtract. If ``None``, the spectrum attached to the abundance image is used.",
+                    "title": "Spectrum Id"
+                  }
+                },
+                "required": [
+                  "abundance_image_id"
+                ],
+                "title": "StepSubtractScaledSpectrumParams",
+                "type": "object"
+              }
+            },
+            "required": [
+              "name"
+            ],
+            "title": "Subtract Scaled Spectrum",
+            "type": "object"
+          },
+          {
+            "description": "utility step",
+            "properties": {
+              "name": {
+                "const": "subtract_spectra"
+              },
+              "params": {
+                "additionalProperties": false,
+                "description": "Parameters for `subtract_spectra`.",
+                "properties": {
+                  "ref_spectra": {
+                    "title": "Ref Spectra",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "ref_spectra"
+                ],
+                "title": "StepSubtractSpectraParams",
+                "type": "object"
+              }
+            },
+            "required": [
+              "name"
+            ],
+            "title": "Subtract Spectra",
+            "type": "object"
+          },
+          {
+            "description": "utility step",
+            "properties": {
+              "name": {
+                "const": "subtract_substrate"
+              },
+              "params": {
+                "additionalProperties": false,
+                "description": "Parameters for `subtract_substrate`.",
+                "properties": {
+                  "how": {
+                    "default": "mean",
+                    "enum": [
+                      "mean95",
+                      "mean",
+                      "median",
+                      "min",
+                      "max"
+                    ],
+                    "title": "How",
+                    "type": "string"
+                  }
+                },
+                "title": "StepSubtractSubstrateParams",
+                "type": "object"
+              }
+            },
+            "required": [
+              "name"
+            ],
+            "title": "Subtract Substrate",
+            "type": "object"
+          }
+        ]
+      },
+      "title": "Pipeline",
+      "type": "array"
+    }
+  },
+  "required": [
+    "input"
+  ],
+  "title": "ramappy batch pipeline configuration",
+  "type": "object"
+}

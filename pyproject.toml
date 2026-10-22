@@ -64,7 +64,7 @@ Homepage = "https://ramapp.io"
 Repository = "https://github.com/ramappy/ramappy"
 
 [project.optional-dependencies]
-dev = ["pytest>=7.0", "pytest-cov>=4.0", "ruff>=0.1.0", "ty>=0.0.1", "types-Pillow", "types-PyYAML", "pre-commit"]
+dev = ["pytest>=7.0", "pytest-cov>=4.0", "ruff>=0.1.0", "ty>=0.0.1", "types-Pillow", "types-PyYAML", "pre-commit", "jsonschema>=4.0"]
 docs = [
   "sphinx>=8.0",
   "myst-parser>=3.0",

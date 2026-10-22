@@ -170,6 +170,84 @@ def ensure_runtime_config(config: PipelineConfigLike) -> RuntimePipelineConfig:
     raise TypeError(msg)
 
 
+def _namespace_refs(node: Any, prefix: str) -> Any:
+    """Prefix every local ``$defs`` reference so sub-schemas can be merged without name clashes."""
+    if isinstance(node, dict):
+        return {
+            k: (
+                f"#/$defs/{prefix}.{v.removeprefix('#/$defs/')}"
+                if k == "$ref" and isinstance(v, str)
+                else _namespace_refs(v, prefix)
+            )
+            for k, v in node.items()
+        }
+    if isinstance(node, list):
+        return [_namespace_refs(v, prefix) for v in node]
+    return node
+
+
+def _embed_schema(schema: dict[str, Any], prefix: str, defs: dict[str, Any]) -> dict[str, Any]:
+    """Move *schema*'s ``$defs`` into *defs* under *prefix* and return the rewritten schema."""
+    schema = _namespace_refs(schema, prefix)
+    for name, sub in schema.pop("$defs", {}).items():
+        defs[f"{prefix}.{name}"] = sub
+    return schema
+
+
+def _is_core(func: Callable[..., Any]) -> bool:
+    return func.__module__.split(".")[0] == "ramappy"
+
+
+def batch_config_json_schema(*, include_plugins: bool = True) -> dict[str, Any]:
+    """Return a JSON Schema (draft 2020-12) for batch pipeline configuration files.
+
+    The schema is built from the registered input formats and pipeline steps.
+    With ``include_plugins=False`` only those defined in the ``ramappy`` package
+    are included, which gives a reproducible schema regardless of installed plugins.
+    """
+    formats = {n: f for n, f in InputFormatRegistry.formats.items() if include_plugins or _is_core(f._read_func)}
+    steps = {n: s for n, s in PipelineStepRegistry.available_steps.items() if include_plugins or _is_core(s.func)}
+    schema = BatchConfig.model_json_schema()
+    defs: dict[str, Any] = schema.setdefault("$defs", {})
+    schema["$schema"] = "https://json-schema.org/draft/2020-12/schema"
+    schema["title"] = "ramappy batch pipeline configuration"
+
+    # Per-format validation of input.format_params
+    input_def = defs["BatchInputConfig"]
+    input_def["allOf"] = [
+        {
+            "if": {"properties": {"format": {"const": name}}, "required": ["format"]},
+            "then": {
+                "properties": {
+                    "format_params": _embed_schema(fmt.format_params_model.model_json_schema(), f"input.{name}", defs)
+                }
+            },
+        }
+        for name, fmt in sorted(formats.items())
+    ]
+    input_def["properties"]["format"] = {
+        "type": "string",
+        "default": "csv",
+        "enum": sorted(formats),
+    }
+
+    # Pipeline steps: one branch per registered step, discriminated by name
+    branches = []
+    for name, step in sorted(steps.items()):
+        params = _embed_schema(step.params_validator.json_schema(), f"step.{name}", defs)
+        branch: dict[str, Any] = {
+            "title": step.friendly_name or name,
+            "type": "object",
+            "properties": {"name": {"const": name}, "params": params},
+            "required": ["name"],
+        }
+        if step.step_category is not None:
+            branch["description"] = f"{step.step_category.value} step"
+        branches.append(branch)
+    schema["properties"]["pipeline"]["items"] = {"oneOf": branches}
+    return schema
+
+
 __all__ = [
     "BatchConfig",
     "BatchGeneralConfig",
@@ -178,6 +256,19 @@ __all__ = [
     "PipelineConfigLike",
     "RuntimeGeneralConfig",
     "RuntimePipelineConfig",
+    "batch_config_json_schema",
     "ensure_runtime_config",
     "validate_pipeline",
 ]
+
+
+if __name__ == "__main__":
+    import json
+    import sys
+
+    # Usage: python -m ramappy.pipeline.configuration [OUTPUT_FILE]  (core steps/formats only)
+    text = json.dumps(batch_config_json_schema(include_plugins=False), indent=2, sort_keys=True) + "\n"
+    if len(sys.argv) > 1:
+        Path(sys.argv[1]).write_text(text, encoding="utf-8")
+    else:
+        sys.stdout.write(text)
