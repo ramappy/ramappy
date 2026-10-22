@@ -71,6 +71,22 @@ def test_align_external_spectrum_full_overlap_roi_tol():
     np.testing.assert_allclose(aligned.x, x[:-1])
 
 
+def test_align_external_spectrum_full_overlap_multi_region():
+    x = np.linspace(100.0, 300.0, 21)
+    hsi = SpectralMap(x=x, data=np.ones((2, 21)), img_width=2, img_height=1, roi_x=[[100, 150], [250, 300]])
+
+    # One ROI covering both disconnected map regions is a full overlap.
+    aligned = hsi.align_external_spectrum(Spectrum(x=x, data=np.ones(21)), overlap="full")
+    np.testing.assert_allclose(aligned.roi_x, [[100, 150], [250, 300]])
+
+    # A gap inside a map region, or a missing region, is not.
+    gapped = Spectrum(x=x, data=np.ones(21), roi_x=[[100, 120], [130, 150], [250, 300]])
+    with pytest.raises(ValueError, match="do not fully match"):
+        hsi.align_external_spectrum(gapped, overlap="full")
+    with pytest.raises(ValueError, match="do not fully match"):
+        hsi.align_external_spectrum(Spectrum(x=x[:11], data=np.ones(11)), overlap="full")
+
+
 def test_despike_mask_mapping_correctness():
     x = np.linspace(100.0, 200.0, 10)
     # 6 pixels, only pixel 2 has a cosmic ray spike at index 5
