@@ -1,5 +1,5 @@
 <p align="center">
-  <a href="https://ramapp.io"><img width="75%" src="./docs/assets/ramappy_logo.svg" alt="ramappy"></a>
+  <a href="https://ramapp.io"><img width="75%" src="https://raw.githubusercontent.com/ramappy/ramappy/main/docs/assets/ramappy_logo.svg" alt="ramappy"></a>
 </p>
 
 # ramappy
