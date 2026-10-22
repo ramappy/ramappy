@@ -180,3 +180,34 @@ def test_spatial_crop_image_bounds():
     # Check cropped image size
     img = Image2DRenderer.render(hsi.images["img"])
     assert img.size == (2, 1)  # width=2, height=1
+
+
+def test_spatial_crop_always_crops_images():
+    x = np.linspace(100.0, 200.0, 10)
+    intensities = np.ones((6, 10), dtype=float)
+    hsi = SpectralMap(x=x, data=intensities, img_width=3, img_height=2)
+
+    # Raster at twice the map resolution is cropped proportionally.
+    hsi.images["img_pil"] = Image2D(image=Image.new("RGB", (6, 4), color="red"))
+    hsi.images["img_data"] = Image2D(data=np.ones((2, 3), dtype=float))
+
+    crop_spatial(hsi, col_start=1, col_end=3, row_start=1, row_end=2)
+
+    assert Image2DRenderer.render(hsi.images["img_pil"]).size == (4, 2)
+    assert hsi.images["img_data"].data is not None
+    assert hsi.images["img_data"].data.shape == (1, 2)
+
+
+def test_spatial_crop_aux_data_differing_spectral_size():
+    x = np.linspace(100.0, 200.0, 10)
+    intensities = np.ones((6, 10), dtype=float)
+    hsi = SpectralMap(x=x, data=intensities, img_width=3, img_height=2)
+
+    aux_data = np.arange(18, dtype=float).reshape(6, 3)
+    hsi.aux_data["aux1"] = aux_data.copy()
+
+    crop_spatial(hsi, col_start=1, col_end=3, row_start=1, row_end=2)
+
+    assert hsi.img_width == 2
+    assert hsi.img_height == 1
+    assert hsi.aux_data["aux1"].shape == (2, 3)
