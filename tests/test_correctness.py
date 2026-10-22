@@ -7,6 +7,7 @@ from scipy.ndimage import median_filter
 
 from ramappy.core.images2d import Image2D, Image2DRenderer
 from ramappy.core.spectral_map import SpectralMap
+from ramappy.core.spectrum import Spectrum
 from ramappy.processing.baseline import correct_baseline
 from ramappy.processing.denoising.despike import despike
 from ramappy.processing.denoising.smooth_spatial import smooth_spatial
@@ -55,6 +56,19 @@ def test_align_external_spectrum_allow_multiple_spectra_guard():
 
     # Should not raise when multiple spectra are explicitly allowed.
     hsi.align_external_spectrum(multi_row_spectrum, allow_multiple_spectra=True)
+
+
+def test_align_external_spectrum_full_overlap_roi_tol():
+    x = np.linspace(100.0, 200.0, 11)  # step 10
+    hsi = SpectralMap(x=x, data=np.ones((2, 11)), img_width=2, img_height=1)
+    # Reference stops one full step short of the map's ROI.
+    ref = Spectrum(x=x[:-1], data=np.ones(10))
+
+    with pytest.raises(ValueError, match="do not fully match"):
+        hsi.align_external_spectrum(ref, overlap="full")
+
+    aligned = hsi.align_external_spectrum(ref, overlap="full", roi_tol=10.0)
+    np.testing.assert_allclose(aligned.x, x[:-1])
 
 
 def test_despike_mask_mapping_correctness():
