@@ -28,7 +28,7 @@ def test_math_steps_report_modified_data(step_name, params):
     spectral_map = _make_map()
     before = spectral_map.data.copy()
 
-    # same options the RamApp backend passes
+    # options that request change tracking and a previous-data snapshot
     PipelineStepRegistry.get_step(step_name).run(spectral_map, params, track_changes=True, save_old_data=True)
 
     assert not np.allclose(spectral_map.data, before)
