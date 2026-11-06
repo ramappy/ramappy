@@ -22,6 +22,7 @@ class StepSubtractSubstrateParams(StepParams):
     params_validator=SingleModelParamsValidator(StepSubtractSubstrateParams),
     friendly_name="Subtract Substrate",
     step_category=StepClass.UTILITY,
+    modifies_data=True,
 )
 def subtract_substrate(
     spectral_map: SpectralMap, aggregation: Literal["mean95", "mean", "median", "min", "max"]
@@ -53,6 +54,7 @@ class StepSubtractSpectraParams(StepParams):
     params_validator=SingleModelParamsValidator(StepSubtractSpectraParams),
     friendly_name="Subtract Spectra",
     step_category=StepClass.UTILITY,
+    modifies_data=True,
 )
 def subtract_spectra(spectral_map: SpectralMap, *, ref_spectra: str):
     """Subtract an external reference spectrum from every pixel in the map.
@@ -88,6 +90,7 @@ class StepMathOperationParams(StepParams, ParamsAcceptRoIX):
     params_validator=SingleModelParamsValidator(StepMathOperationParams),
     friendly_name="Math Operation",
     step_category=StepClass.UTILITY,
+    modifies_data=True,
 )
 def math_operation(
     spectral_map: SpectralMap,
