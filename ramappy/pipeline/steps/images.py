@@ -157,19 +157,24 @@ def edit_image(
         else:
             # apply each provided field independently instead of an elif chain, so e.g. passing
             # `data_rules` for an image without existing data_rules no longer falls through to delete
-            viz_rules_applied = False
             if data_rules is not None and img.data_rules is not None:
-                spectral_map.images[key] = spectral_map.intensity_map(data_rules=data_rules, viz_rules=viz_rules)
-                img = spectral_map.images[key]
-                viz_rules_applied = viz_rules is not None
-            if viz_rules is not None and not viz_rules_applied:
-                if img.viz_rules is not None:
-                    img.viz_rules.update(viz_rules)  # type: ignore
-                else:
-                    img.viz_rules = viz_rules
+                # rebuild from the new rules, keeping the image's identity and display attributes
+                new_img = spectral_map.intensity_map(
+                    data_rules=data_rules,
+                    viz_rules=img.viz_rules.model_copy(),
+                    name=img.name,
+                    locked=img.locked,
+                    visible=img.visible,
+                )
+                new_img.parent_group = img.parent_group
+                spectral_map.images[key] = img = new_img
+            if viz_rules is not None:
+                img.viz_rules.update(viz_rules)
             if locked is not None and img.data_rules is not None:
                 img.locked = locked
                 spectral_map.update_image(key)
+                # update_image may replace the image object; keep editing the stored one
+                img = spectral_map.images[key]
             if name is not None:
                 img.name = name
                 if img.spectrum is not None:
