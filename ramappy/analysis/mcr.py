@@ -233,7 +233,10 @@ def mcr(
             common_spc = common_spc.align_external_spectrum(rs, overlap=True)
 
         initial_spectra = np.vstack(
-            [common_spc.align_external_spectrum(rs, overlap=True).data for rs in resolved_spectra]
+            [
+                common_spc.align_external_spectrum(rs, overlap=True, allow_multiple_spectra=allow_multiple_spectra).data
+                for rs in resolved_spectra
+            ]
         )
 
         if roi_x is not None:

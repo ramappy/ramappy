@@ -344,6 +344,7 @@ class Spectrum:
         common_spectral_axis: bool = False,
         ignore_calibration: bool = False,
         allow_multiple_spectra: bool = False,
+        roi_tol: float | None = None,
     ) -> TSpectrum:
         """Align *spectrum* to this spectrum's spectral axis and ROI.
 
@@ -353,13 +354,16 @@ class Spectrum:
             The spectrum to align.
         overlap : bool | 'full'
             ``True``: allow partial overlap. ``'full'``: ROIs must match
-            exactly. ``False``: skip overlap check entirely.
+            exactly, within *roi_tol*. ``False``: skip overlap check entirely.
         common_spectral_axis : bool
             If ``True``, require identical spectral axes.
         ignore_calibration : bool
             Skip unit comparison.
         allow_multiple_spectra : bool
             If ``False``, raise when *spectrum* contains more than one pixel.
+        roi_tol : float | None
+            Absolute ROI edge tolerance used by ``overlap='full'``, in spectral units.
+            Defaults to half the median spectral step of this spectrum.
 
         Returns
         -------
@@ -397,8 +401,13 @@ class Spectrum:
             roi_x_common = common_roi_overlap(spectrum.roi_x, self.roi_x)
             if len(roi_x_common) == 0:
                 raise ValueError("No overlapping regions of interest")
-            if overlap == "full" and not np.allclose(self.roi_x, roi_x_common, rtol=1e-04):
-                raise ValueError("Regions of interest do not fully match")
+            if overlap == "full":
+                # Default: half a spectral step, i.e. the largest error from snapping an edge to the grid.
+                tol = roi_tol if roi_tol is not None else 0.5 * float(np.median(np.abs(np.diff(self.x))))
+                if self.roi_x.shape != roi_x_common.shape or not np.allclose(
+                    self.roi_x, roi_x_common, rtol=0.0, atol=tol
+                ):
+                    raise ValueError("Regions of interest do not fully match")
 
             x_idx_hsi = select_x_indices(self.x, roi_x_common)
             x_idx_ref = select_x_indices(spectrum.x, roi_x_common)

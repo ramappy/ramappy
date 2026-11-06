@@ -5,6 +5,7 @@ import pytest
 
 from ramappy.analysis.mcr import StepMCRParams, mcr, mcr_regressor_map
 from ramappy.core.spectral_map import SpectralMap
+from ramappy.core.spectrum import Spectrum
 
 
 def _make_mixed_hsi(*, img_side: int = 4, n_wn: int = 60) -> SpectralMap:
@@ -57,6 +58,20 @@ def test_mcr_reference_init_requires_non_empty_reference_list():
             reference_spectra=[],
             res_id="testmcr_ref",
         )
+
+
+def test_mcr_reference_init_accepts_single_reference_with_multiple_spectra():
+    spectral_map = _make_mixed_hsi()
+    ref = Spectrum(x=spectral_map.x, data=spectral_map.data[[0, -1]])  # one reference, 2 spectra
+
+    mcr(
+        spectral_map,
+        initial_estimate_method="reference_spectra",
+        reference_spectra=[ref],
+        res_id="testmcr_multi",
+    )
+
+    assert len(spectral_map.images_group["testmcr_multi"].elem_ids) == 2
 
 
 def test_mcr_regressor_map_does_not_mutate_kwargs():

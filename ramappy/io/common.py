@@ -63,8 +63,11 @@ def guess_file_type(filename: str) -> InputFormat:
                 try:
                     if fmt.sniffer(filename):
                         return fmt
+                except (PermissionError, FileNotFoundError):
+                    raise
                 except Exception:
                     logger.debug("Input format sniffer failed for %s", fmt.format_name, exc_info=True)
+                    logger.warning("Input format sniffer failed for %s", fmt.format_name, exc_info=True)
 
         # Fallback if no sniffer matches:
         # prefer the generic format (without sniffer), e.g., `hdf5` over a specific flavour.

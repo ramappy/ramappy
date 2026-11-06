@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import copy
 from collections.abc import Iterator, MutableMapping
 from typing import TypedDict, TypeVar
 
@@ -54,6 +55,8 @@ class EntityTransaction[T]:
         self._owner = owner
         self._snapshot: dict[str, T] = dict(owner._data)
         self._snapshot_order: list[str] = list(owner._order)
+        # deep copy for rollback, so in-place mutations of entities (not just reassignments) are also undone
+        self._restore_snapshot: dict[str, T] = copy.deepcopy(self._snapshot)
 
         # Change sets, populated on commit
         self._added: dict[str, T] = {}
@@ -97,7 +100,7 @@ class EntityTransaction[T]:
 
         This performs the same logic as an exception during a context block.
         """
-        self._owner._data = self._snapshot
+        self._owner._data = self._restore_snapshot
         self._owner._order = self._snapshot_order
         self._committed = False
 

@@ -49,3 +49,22 @@ def test_guess_file_type_logs_sniffer_errors_and_keeps_fallback(tmp_path, caplog
 
     assert selected.format_name == "hdf5"
     assert "Input format sniffer failed for hdf5_nexus" in caplog.text
+
+
+def test_guess_file_type_propagates_permission_and_file_not_found(tmp_path, monkeypatch):
+    nexus_format = next(fmt for fmt in InputFormatRegistry.extension_map["h5"] if fmt.format_name == "hdf5_nexus")
+
+    def permission_denied_sniffer(_filename):
+        raise PermissionError("Access denied")
+
+    monkeypatch.setattr(nexus_format, "sniffer", permission_denied_sniffer)
+    with pytest.raises(PermissionError, match="Access denied"):
+        guess_file_type("some_file.h5")
+
+    def not_found_sniffer(_filename):
+        raise FileNotFoundError("File does not exist")
+
+    monkeypatch.setattr(nexus_format, "sniffer", not_found_sniffer)
+    with pytest.raises(FileNotFoundError, match="File does not exist"):
+        guess_file_type("some_file.h5")
+
