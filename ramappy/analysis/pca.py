@@ -106,7 +106,7 @@ def principal_components(
 
     masked_img_template = None
     if not isinstance(pixel_idx, slice):
-        masked_img_template = np.empty(spectral_map.map_shape, dtype=scores.dtype)
+        masked_img_template = np.full(spectral_map.map_shape, np.nan, dtype=scores.dtype)
         mask_obj = spectral_map.get_mask(mask) if isinstance(mask, str) else None
         if mask_obj is not None:
             mask_2d = mask_obj.get_2Dmask(invert=True)

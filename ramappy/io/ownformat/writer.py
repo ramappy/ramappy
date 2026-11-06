@@ -80,7 +80,11 @@ def _add_masks_images(df: pl.DataFrame, *, spectral_map: SpectralMap, selected_p
             group_suffix = f"(group[{image.parent_group}]: {img_g.name})"
         col_name = f"image[{image_id}]: {image.name} {group_suffix}".rstrip()
 
-        flat = np.asarray(image.data).reshape(-1)
+        data = image.data
+        # masked pixels are written as NaN, not as whatever the underlying buffer holds
+        flat = (
+            np.ma.filled(data.astype(np.float64), np.nan) if np.ma.isMaskedArray(data) else np.asarray(data)
+        ).reshape(-1)
         df = df.with_columns(pl.Series(col_name, flat[selected_pixels]))
 
     return df

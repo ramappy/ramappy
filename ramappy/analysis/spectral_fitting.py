@@ -130,7 +130,7 @@ def spectral_fitting(
         raise ValueError(f"Unknown method: {method!r}")
 
     if not isinstance(pixel_idx, slice):
-        img = np.empty(spectral_map.map_shape, dtype=scores.dtype)
+        img = np.full(spectral_map.map_shape, np.nan, dtype=scores.dtype)
         img.ravel()[pixel_idx] = scores.flatten()
         mask_obj = spectral_map.get_mask(mask) if isinstance(mask, str) else None
         if mask_obj is not None:
