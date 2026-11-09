@@ -1,6 +1,6 @@
 # Installation
 
-`ramappy` is not yet published on PyPI, install it directly from Git. [uv](https://docs.astral.sh/uv/)
+[ramappy](https://pypi.org/project/ramappy/) is published on PyPI. [uv](https://docs.astral.sh/uv/)
 is the recommended tool, but a plain `pip` also works.
 
 ## Install uv
@@ -14,7 +14,21 @@ curl -LsSf https://astral.sh/uv/install.sh | sh
 See the [uv installation guide](https://docs.astral.sh/uv/getting-started/installation/) for other
 methods (`pipx`, `brew`, `winget`, ...).
 
-## Install ramappy
+## Install ramappy from PyPI
+
+Into an existing project managed by `uv`:
+
+```bash
+uv add ramappy
+```
+
+With plain `pip`:
+
+```bash
+pip install ramappy
+```
+
+For the unreleased development version, install directly from Git:
 
 Into an existing project managed by `uv`:
 
@@ -46,7 +60,7 @@ Some functionality in **RamAppy** relies on optional dependencies. Install the r
 Exporting data to a `pandas.DataFrame` requires the `pandas` extra, which installs both **pandas** and **PyArrow**.
 
 ```bash
-uv add "ramappy[pandas] @ git+https://github.com/ramappy/ramappy.git"
+uv add "ramappy[pandas]"
 ```
 
 ### Intel® Extension for Scikit-learn
