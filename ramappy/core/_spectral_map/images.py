@@ -173,7 +173,7 @@ class _SpectralMapImagesMixin:
             elif agg == "min":
                 intensities = np.min(intensities, axis=const.Axis.SPECTRAL)
             elif agg == "fwhm":
-                intensities = self.apply_func(fwhm, data=intensities, by="pixel")
+                intensities = self.apply_func(fwhm, data=intensities, by="pixel", empty_output_shape=())
             else:
                 # default to mean (works even for a single index)
                 intensities = np.mean(intensities, axis=const.Axis.SPECTRAL)

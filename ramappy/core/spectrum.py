@@ -291,16 +291,24 @@ class Spectrum:
         preserve_input_dtype: bool = True,
         by: str = "pixel",
         parallel: bool | str | None = None,
+        empty_output_shape: tuple[int, ...] | None = None,
         **kwargs,
     ) -> np.ndarray:
-        """Apply *f* to spectral data row-by-row (``by='pixel'``)."""
+        """Apply *f* row-by-row (``by='pixel'``).
+
+        For empty input, ``empty_output_shape`` specifies the shape returned
+        by *f* for one row; use ``()`` for scalar reducers. When omitted,
+        the input row's shape is preserved.
+        """
         if by != "pixel":
             raise ValueError("Only by='pixel' is supported for Spectrum.apply_func")
         if data is None:
             data = self.data
         data = np.asarray(data)
         output_dtype = data.dtype if preserve_input_dtype else None
-        return _apply_rows_standalone(f, data, parallel=parallel, output_dtype=output_dtype, kwargs=kwargs)
+        return _apply_rows_standalone(
+            f, data, parallel=parallel, output_dtype=output_dtype, kwargs=kwargs, empty_output_shape=empty_output_shape
+        )
 
     def get_indices(
         self,

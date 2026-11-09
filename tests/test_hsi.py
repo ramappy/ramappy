@@ -257,3 +257,12 @@ def test_spatial_grid_coordinate_roundtrip():
     row, col = grid.physical_to_pixel(y, x)
     assert row == 2
     assert col == 3
+
+
+@pytest.mark.parametrize("parallel", [False, "threads", "processes"])
+def test_empty_apply_func_shape(parallel):
+    m = SpectralMap(x=np.arange(4.0), data=np.ones((2, 4)), img_width=2, img_height=1)
+    empty = m.data[:0]
+    assert m.apply_func(np.max, data=empty, parallel=parallel, empty_output_shape=()).shape == (0,)
+    assert m.apply_func(lambda x: x, data=empty, parallel=parallel).shape == (0, 4)
+    assert Spectrum(x=m.x, data=np.ones(4)).apply_func(np.max, data=empty, empty_output_shape=()).shape == (0,)
