@@ -86,6 +86,10 @@ def persistence_middleware(ctx: StepContext, next_step: Callable[[StepContext], 
         if ctx.changes.modified_data:
             ctx.store.write_intensities(ctx.data.cube)
 
+        step = PipelineStepRegistry.get_step(ctx.step_config.name)
+        if step._modifies_spectral_axis(ctx.step_config.params):
+            ctx.store.write_x(ctx.data.x)
+
         # Flush global attributes (including updated history with results).
         project = getattr(ctx.data, "_project", None)
         pipeline = getattr(project, "pipeline", None) if project else None

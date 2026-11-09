@@ -175,3 +175,57 @@ def test_resample_roi_tol():
     smap = SpectralMap(x=x, data=np.ones((2, 11)), img_width=2, img_height=1)
     with pytest.raises(ValueError, match="do not fully match"):
         resample(smap, x_grid=grid, roi_tol=1.0)
+
+
+@pytest.mark.parametrize("invalid", [-1.0, np.nan, np.inf])
+def test_invalid_resampling_tolerance(invalid):
+    s = Spectrum(x=np.arange(5.0), data=np.arange(5.0))
+    with pytest.raises(ValueError, match="roi_tol"):
+        resample(s, x_grid=np.arange(5.0), roi_tol=invalid)
+    with pytest.raises(ValueError):
+        StepResampleParams(spectrum_step=1.0, roi_tol=invalid)
+
+
+@pytest.mark.parametrize("grid", [[], [0.0, 2.0, 1.0], [0.0, 1.0, 1.0], [0.0, np.nan]])
+def test_invalid_target_grid(grid):
+    s = Spectrum(x=np.arange(5.0), data=np.arange(5.0))
+    with pytest.raises(ValueError, match="Spectral axis"):
+        resample(s, x_grid=grid)
+
+
+def test_resample_boundaries_and_whittaker_no_extrapolation():
+    s = Spectrum(x=np.arange(5.0), data=np.arange(5.0) ** 2)
+    resample(s, x_grid=[-0.5, 1.0, 4.5], spline_kind="slinear", roi_tol=0.5)
+    np.testing.assert_allclose(s.data, [[0.0, 1.0, 16.0]])
+    s = Spectrum(x=np.arange(5.0), data=np.arange(5.0) ** 2)
+    with pytest.raises(ValueError, match="do not fully match"):
+        resample(s, x_grid=[-0.51, 1.0, 4.0], roi_tol=0.5)
+    with pytest.raises(ValueError, match="does not extrapolate"):
+        resample(s, x_grid=[0.0, 1.0, 4.5], method="whittaker", roi_tol=10.0)
+    resample(s, x_grid=[1.0, 2.0, 3.0], method="whittaker")
+
+
+def test_resample_single_point_and_float_grid():
+    for method in ("spline", "whittaker"):
+        s = Spectrum(x=np.array([1.0]), data=np.array([5.0]))
+        resample(s, x_grid=[1.0], method=method)
+        np.testing.assert_array_equal(s.data, [[5.0]])
+    s = Spectrum(x=np.arange(5), data=np.arange(5.0))
+    resample(s, x_grid=[0.5, 1.5, 2.5], spline_kind="slinear")
+    np.testing.assert_array_equal(s.x, [0.5, 1.5, 2.5])
+    np.testing.assert_allclose(s.data, [[0.5, 1.5, 2.5]])
+
+
+def test_whittaker_accepts_interior_fractional_grid():
+    s = Spectrum(x=np.arange(5.0), data=np.arange(5.0))
+    resample(s, x_grid=[1.4, 2.4, 3.4], method="whittaker")
+    np.testing.assert_allclose(s.x, [1.4, 2.4, 3.4])
+    np.testing.assert_allclose(s.data, [[1.4, 2.4, 3.4]], atol=1e-4)
+
+
+def test_spline_single_point_uses_sufficient_source_samples():
+    x = np.arange(11.0)
+    s = Spectrum(x=x, data=x**2)
+    resample(s, x_grid=[2.5])
+    np.testing.assert_allclose(s.x, [2.5])
+    np.testing.assert_allclose(s.data, [[6.25]])

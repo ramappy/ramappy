@@ -57,7 +57,7 @@ def _common_roi_overlap_core(roi_A: np.ndarray, roi_B: np.ndarray) -> np.ndarray
     while i < n_a and j < n_b:
         l_end = max(roi_A[i, 0], roi_B[j, 0])
         r_end = min(roi_A[i, 1], roi_B[j, 1])
-        if l_end < r_end:
+        if l_end < r_end or (l_end == r_end and (roi_A[i, 0] == roi_A[i, 1] or roi_B[j, 0] == roi_B[j, 1])):
             out[count, 0] = l_end
             out[count, 1] = r_end
             count += 1
@@ -96,6 +96,8 @@ def common_roi_overlap(roi_A: np.ndarray, roi_B: np.ndarray) -> np.ndarray:
 
     `roi_A` and `roi_B` are also cast to a shared dtype (via
     `np.result_type`) before entering the jitted core.
+    A zero-width ROI represents a point and overlaps an interval containing
+    it; two nonzero-width intervals that merely touch do not overlap.
     """
     roi_A = clean_roi(roi_A)
     roi_B = clean_roi(roi_B)

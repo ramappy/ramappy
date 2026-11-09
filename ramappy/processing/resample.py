@@ -19,6 +19,7 @@ from ramappy.core.pipeline import (
     pipeline_step,
 )
 from ramappy.utils import common_roi_overlap, merge_arrays, select_x_indices, whittaker_smooth
+from ramappy.utils.array import validate_spectral_axis
 
 
 class StepResampleParams(StepParams, ParamsAcceptRoIX):
@@ -40,7 +41,7 @@ class StepResampleParams(StepParams, ParamsAcceptRoIX):
     ref_spectrum_id: str | None = None
     """Identifier of the reference spectrum to use for resampling. If provided, the x-axis of this spectrum will be used as the target grid. Mutually exclusive with ``spectrum_step``."""
 
-    roi_tol: float | None = Field(default=None, gt=0)
+    roi_tol: float | None = Field(default=None, ge=0, allow_inf_nan=False)
     """Maximum distance the target grid may extend beyond the data ROI, in spectral units. Defaults to one median spectral step."""
 
     @model_validator(mode="after")
@@ -114,8 +115,8 @@ def resample(
     ``roi_tol``) take the nearest edge value instead of being extrapolated. A larger
     overshoot raises ``ValueError``, as does a grid that does not overlap the data ROI.
 
-    With ``method='whittaker'`` the smoothing order is reduced automatically on
-    very short grids.
+    With ``method='whittaker'`` extrapolation is rejected, and the smoothing
+    order is reduced automatically on very short grids.
 
     Raises
     ------
@@ -126,6 +127,11 @@ def resample(
     """
     if method not in {"spline", "whittaker"}:
         raise ValueError(f"Method {method} is not recognized.")
+
+    if roi_tol is not None and (not np.isfinite(roi_tol) or roi_tol < 0):
+        raise ValueError("roi_tol must be finite and nonnegative")
+    if spectrum_step is not None and (not np.isfinite(spectrum_step) or spectrum_step <= 0):
+        raise ValueError("spectrum_step must be finite and positive")
 
     provided = sum(x is not None for x in (spectrum_step, ref_spectrum_id, x_grid))
     if provided != 1:
@@ -161,6 +167,8 @@ def resample(
         x_grid_list = (
             [np.asarray(x_grid, dtype=float)] if is_flat_grid else [np.asarray(r, dtype=float) for r in x_grid_arr]
         )
+        for grid in x_grid_list:
+            validate_spectral_axis(grid)
         # A flat grid carries no region information, so roi_x selects the regions;
         # a grid given as a list of regions already defines its own ROIs and roi_x is ignored.
         if is_flat_grid and roi_x is not None:
@@ -172,6 +180,9 @@ def resample(
             if len(x_grid_list) == 0 or any(len(g) == 0 for g in x_grid_list):
                 raise ValueError("No overlapping regions of interest")
         roi_x_arr = np.array([[ri[0], ri[-1]] for ri in x_grid_list])
+
+    new_x = np.hstack(x_grid_list)
+    validate_spectral_axis(new_x)
 
     if check_roi:
         roi_x_common = common_roi_overlap(roi_x_arr, spectral_map.roi_x)
@@ -185,22 +196,46 @@ def resample(
         else:
             delta = np.median(np.diff(spectral_map.x)) if len(spectral_map.x) > 1 else 1.0
         if not len(roi_x_arr) == len(roi_x_common) or not np.allclose(
-            roi_x_common.ravel(), roi_x_arr.ravel(), atol=delta
+            roi_x_common.ravel(), roi_x_arr.ravel(), atol=delta, rtol=0.0
         ):
             raise ValueError("Regions of interest do not fully match")
 
-    new_x = np.hstack(x_grid_list, dtype=spectral_map.x.dtype)
     intensities = np.empty((spectral_map.data.shape[const.Axis.PIXEL], len(new_x)), dtype=spectral_map.data.dtype)
 
     offset = 0
     for i, x_region in enumerate(x_grid_list):
         roi_x_cur = roi_x_arr[i]
-        idxs, x_idx, _ = spectral_map.get_indices(mask=None, roi_x=roi_x_cur)
-        x_cur = np.array(x_region, dtype=spectral_map.x.dtype)
+        source_region = next(
+            (region for region in spectral_map.roi_x if region[0] <= roi_x_cur[1] and region[1] >= roi_x_cur[0]),
+            None,
+        )
+        if source_region is None:
+            raise ValueError("No overlapping regions of interest")
+        allowed = select_x_indices(spectral_map.x, source_region)
+        start = max(allowed.start, np.searchsorted(spectral_map.x, roi_x_cur[0], side="right") - 1)
+        stop = min(allowed.stop, np.searchsorted(spectral_map.x, roi_x_cur[1], side="left") + 1)
+        if method == "spline":
+            # a spline of degree k needs k + 1 source samples around the target points
+            required = {"zero": 1, "slinear": 2, "quadratic": 3, "cubic": 4}[spline_kind or "cubic"]
+            stop = min(allowed.stop, max(stop, start + required))
+            start = max(allowed.start, min(start, stop - required))
+        x_idx = slice(int(start), int(stop))
+        idxs = (slice(None), x_idx)
+        x_cur = np.array(x_region, dtype=new_x.dtype)
         x_cur.sort()
+        if method == "whittaker":
+            x_source = spectral_map.x[x_idx]
+            roundoff = np.finfo(float).eps * max(1.0, abs(float(x_source[0])), abs(float(x_source[-1]))) * 8
+            if x_cur[0] < x_source[0] - roundoff or x_cur[-1] > x_source[-1] + roundoff:
+                raise ValueError("Whittaker resampling does not extrapolate beyond measured data")
+            x_cur = np.clip(x_cur, x_source[0], x_source[-1])
         try:
             if method == "whittaker":
                 x_merge, (old_roi_idx, grid_idx) = merge_arrays(spectral_map.x[x_idx], x_cur)
+                if len(x_merge) == 1:
+                    intensities[:, offset : offset + 1] = spectral_map.data[idxs]
+                    offset += len(x_cur)
+                    continue
 
                 w = np.zeros_like(x_merge, dtype=spectral_map.data.dtype)  # weights
                 w[old_roi_idx] = 1.0  # set weight for observed values to 1
@@ -226,7 +261,9 @@ def resample(
                 fill_below = src_data[:, 0]
                 fill_above = src_data[:, -1]
                 x_src = spectral_map.x[x_idx]
-                if spline_kind == "zero":
+                if len(x_src) == 1:
+                    intensities[:, offset : offset + len(x_cur)] = src_data[:, :1]
+                elif spline_kind == "zero":
                     # Piecewise-constant: return the value of the left-hand neighbour.
                     # np.clip ensures out-of-range queries map to edge values.
                     idx = np.clip(

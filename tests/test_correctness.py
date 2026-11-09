@@ -68,7 +68,8 @@ def test_align_external_spectrum_full_overlap_roi_tol():
         hsi.align_external_spectrum(ref, overlap="full")
 
     aligned = hsi.align_external_spectrum(ref, overlap="full", roi_tol=10.0)
-    np.testing.assert_allclose(aligned.x, x[:-1])
+    np.testing.assert_allclose(aligned.x, x)
+    np.testing.assert_allclose(aligned.data, 1.0)
 
 
 def test_align_external_spectrum_full_overlap_multi_region():
@@ -241,3 +242,28 @@ def test_spatial_crop_aux_data_differing_spectral_size():
     assert hsi.img_width == 2
     assert hsi.img_height == 1
     assert hsi.aux_data["aux1"].shape == (2, 3)
+
+
+def test_full_alignment_exact_target_and_single_point():
+    s = Spectrum(x=np.arange(11.0), data=np.ones(11))
+    ref = Spectrum(x=np.arange(0.5, 11.0), data=np.arange(11.0))
+    aligned = s.align_external_spectrum(ref, overlap="full")
+    np.testing.assert_array_equal(aligned.x, s.x)
+    assert aligned.data.shape == s.data.shape
+    assert aligned.data[0, 0] == ref.data[0, 0]
+    target = Spectrum(x=np.array([1.0]), data=np.ones(1))
+    assert target.align_external_spectrum(target, overlap="full").data.shape == (1, 1)
+    aligned = target.align_external_spectrum(s, overlap="full")
+    np.testing.assert_array_equal(aligned.x, [1.0])
+
+
+def test_full_alignment_clamps_to_reference_roi_not_outside_samples():
+    x = np.arange(11.0)
+    ref = Spectrum(x=x, data=x, roi_x=[[2.0, 8.0]])
+    target = Spectrum(x=x[1:10], data=np.zeros(9))
+    aligned = target.align_external_spectrum(ref, overlap="full", roi_tol=1.0)
+    np.testing.assert_array_equal(aligned.x, target.x)
+    np.testing.assert_array_equal(aligned.data, [[2, 2, 3, 4, 5, 6, 7, 8, 8]])
+    single = Spectrum(x=np.array([1.0]), data=np.zeros(1))
+    aligned_single = single.align_external_spectrum(ref, overlap="full", roi_tol=1.0)
+    np.testing.assert_array_equal(aligned_single.data, [[2]])
