@@ -332,9 +332,15 @@ class SpectralMap(_SpectralMapFunctionalMixin, _SpectralMapImagesMixin, _Spectra
         by: Literal["pixel", "wavenumber", "map"] = "pixel",
         flatten: bool = True,
         parallel: bool | Literal["threads", "processes"] | None = None,
+        empty_output_shape: tuple[int, ...] | None = None,
         **kwargs,
     ) -> np.ndarray:
-        """Apply a function to SpectralMap data with optional parallelization."""
+        """Apply a function across the map.
+
+        For empty input, ``empty_output_shape`` specifies the shape returned
+        by the function for one item; use ``()`` for scalar reducers. When
+        omitted, the input item's shape is preserved.
+        """
         return super().apply_func(
             f,
             data=data,
@@ -342,6 +348,7 @@ class SpectralMap(_SpectralMapFunctionalMixin, _SpectralMapImagesMixin, _Spectra
             by=by,
             flatten=flatten,
             parallel=parallel,
+            empty_output_shape=empty_output_shape,
             **kwargs,
         )
 

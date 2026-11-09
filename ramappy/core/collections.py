@@ -2,10 +2,53 @@
 
 from __future__ import annotations
 
+import copy
 from collections.abc import Iterator, MutableMapping
-from typing import TypedDict, TypeVar
+from typing import Any, TypedDict, TypeVar
+
+import numpy as np
+from PIL import Image
 
 T = TypeVar("T")
+
+
+def _same_state(a: Any, b: Any, seen: set[tuple[int, int]] | None = None) -> bool:
+    """Compare deep snapshots, including arrays and nested entity state."""
+    if type(a) is not type(b):
+        return False
+    if a is b:
+        return True
+    if seen is None:
+        seen = set()
+    pair = (id(a), id(b))
+    if pair in seen:
+        return True
+    seen.add(pair)
+    if isinstance(a, np.ma.MaskedArray):
+        return (
+            _same_state(a.data, b.data, seen)
+            and _same_state(np.ma.getmaskarray(a), np.ma.getmaskarray(b), seen)
+            and _same_state(a.fill_value, b.fill_value, seen)
+        )
+    if isinstance(a, np.ndarray):
+        if a.shape != b.shape or a.dtype != b.dtype:
+            return False
+        if a.dtype.hasobject:
+            return all(_same_state(x, y, seen) for x, y in zip(a.flat, b.flat, strict=True))
+        return bool(np.array_equal(a, b, equal_nan=a.dtype.kind in "fc"))
+    if isinstance(a, Image.Image):
+        return a == b
+    if isinstance(a, dict):
+        return a.keys() == b.keys() and all(_same_state(value, b[key], seen) for key, value in a.items())
+    if isinstance(a, (list, tuple)):
+        return len(a) == len(b) and all(_same_state(x, y, seen) for x, y in zip(a, b, strict=True))
+    if isinstance(a, (float, np.floating)) and np.isnan(a) and np.isnan(b):
+        return True
+    if hasattr(a, "__dict__"):
+        return _same_state(vars(a), vars(b), seen) and _same_state(
+            getattr(a, "__pydantic_private__", None), getattr(b, "__pydantic_private__", None), seen
+        )
+    return bool(a == b)
 
 
 class Changes(TypedDict):
@@ -54,6 +97,8 @@ class EntityTransaction[T]:
         self._owner = owner
         self._snapshot: dict[str, T] = dict(owner._data)
         self._snapshot_order: list[str] = list(owner._order)
+        # deep copy for rollback, so in-place mutations of entities (not just reassignments) are also undone
+        self._restore_snapshot: dict[str, T] = copy.deepcopy(self._snapshot)
 
         # Change sets, populated on commit
         self._added: dict[str, T] = {}
@@ -79,7 +124,7 @@ class EntityTransaction[T]:
         for key, value in self._owner._data.items():
             if key not in self._snapshot:
                 self._added[key] = value
-            elif self._snapshot[key] is not value:
+            elif self._snapshot[key] is not value or not _same_state(value, self._restore_snapshot[key]):
                 self._modified[key] = value
         for key in self._snapshot:
             if key not in self._owner._data:
@@ -97,7 +142,7 @@ class EntityTransaction[T]:
 
         This performs the same logic as an exception during a context block.
         """
-        self._owner._data = self._snapshot
+        self._owner._data = self._restore_snapshot
         self._owner._order = self._snapshot_order
         self._committed = False
 

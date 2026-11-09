@@ -49,6 +49,7 @@ def transaction_middleware(ctx: StepContext, next_step: Callable[[StepContext], 
             images_group=ctx.transactions["images_group"].commit() if "images_group" in ctx.transactions else None,
             spectra=ctx.transactions["spectra"].commit() if "spectra" in ctx.transactions else None,
             results=ctx.results,
+            modified_data=ctx.changes.modified_data,
         )
         return result
     except Exception:
@@ -85,6 +86,10 @@ def persistence_middleware(ctx: StepContext, next_step: Callable[[StepContext], 
         # Handle intensities modification if flag is set
         if ctx.changes.modified_data:
             ctx.store.write_intensities(ctx.data.cube)
+
+        step = PipelineStepRegistry.get_step(ctx.step_config.name)
+        if step._modifies_spectral_axis(ctx.step_config.params):
+            ctx.store.write_x(ctx.data.x)
 
         # Flush global attributes (including updated history with results).
         project = getattr(ctx.data, "_project", None)
@@ -208,14 +213,14 @@ class StepRunner:
         # Explicit execution order, outermost to innermost.
         # - persistence: writes final state to store
         # - history: appends step history
-        # - modification: sets modified_data / optional image updates
         # - transaction: collects map-level entity changes atomically
+        # - modification: sets modified_data / optional image updates
         # - core: executes the registered step function
         self.middlewares = middlewares or [
             persistence_middleware,
             history_middleware,
-            modification_middleware,
             transaction_middleware,
+            modification_middleware,
             core_middleware,
         ]
 

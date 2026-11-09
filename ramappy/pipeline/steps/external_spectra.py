@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import copy
+import warnings
 from pathlib import Path
 
 from pydantic import Field, FilePath
@@ -65,7 +66,9 @@ def add_spectrum(
     If the imported spectrum carries no ``x_axis_unit`` or ``data_unit`` (e.g.,
     a plain CSV with no metadata), the corresponding unit is inherited from
     *spectral_map* so that axis labels and unit-compatibility checks work
-    correctly throughout the pipeline.
+    correctly throughout the pipeline. If the imported spectrum's spectral
+    unit is incompatible with the *spectral_map*'s (e.g., nm vs. cm⁻¹), it is
+    still imported as-is, but a warning is raised.
 
     Raises
     ------
@@ -82,6 +85,16 @@ def add_spectrum(
     spectra = reader.read(file_path, format_params, as_hsi=as_hsi)
     if spectra.x_axis_unit is None and spectral_map.x_axis_unit is not None:
         spectra.x_axis_unit = spectral_map.x_axis_unit
+    elif (
+        spectra.x_axis_unit is not None
+        and spectral_map.x_axis_unit is not None
+        and spectra.x_axis_unit.unit != spectral_map.x_axis_unit.unit
+    ):
+        warnings.warn(
+            f"Imported spectrum has spectral unit {spectra.x_axis_unit} "
+            f"incompatible with the spectral map's unit {spectral_map.x_axis_unit}",
+            stacklevel=2,
+        )
     if spectra.data_unit is None and spectral_map.data_unit is not None:
         spectra.data_unit = spectral_map.data_unit
     spectral_map.add_spectra(spectra, key=res_id)

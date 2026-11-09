@@ -73,14 +73,17 @@ class _SpectralMapImagesMixin:
 
     def update_image(self, image_id: str):
         """Update a specific image by ID."""
-        if not self.images[image_id].locked:
-            self.images[image_id] = self.intensity_map(
-                data_rules=self.images[image_id].data_rules,
-                viz_rules=self.images[image_id].viz_rules,
-                name=self.images[image_id].name,
-                locked=self.images[image_id].locked,
-                visible=self.images[image_id].visible,
+        old = self.images[image_id]
+        if not old.locked:
+            new = self.intensity_map(
+                data_rules=old.data_rules,
+                viz_rules=old.viz_rules,
+                name=old.name,
+                locked=old.locked,
+                visible=old.visible,
             )
+            new.parent_group = old.parent_group
+            self.images[image_id] = new
 
     def new_images_group(self, elem_ids: list[str] | None = None, **kwargs) -> Image2DGroup:
         """Create a new group of images."""
@@ -170,7 +173,7 @@ class _SpectralMapImagesMixin:
             elif agg == "min":
                 intensities = np.min(intensities, axis=const.Axis.SPECTRAL)
             elif agg == "fwhm":
-                intensities = self.apply_func(fwhm, data=intensities, by="pixel")
+                intensities = self.apply_func(fwhm, data=intensities, by="pixel", empty_output_shape=())
             else:
                 # default to mean (works even for a single index)
                 intensities = np.mean(intensities, axis=const.Axis.SPECTRAL)

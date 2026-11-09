@@ -72,6 +72,8 @@ def sniff_witec(filepath: str) -> bool:
                     return False
                 inner = f[keys[0]]
                 return "imagesize" in inner and "data" in inner and "axisscale" in inner
+    except (PermissionError, FileNotFoundError):
+        raise
     except Exception:
         return False
 
@@ -88,6 +90,8 @@ def sniff_nexus(filepath: str) -> bool:
                 "PROJECT/author_id",
             )
             return all(path in f for path in required_paths)
+    except (PermissionError, FileNotFoundError):
+        raise
     except Exception:
         return False
 

@@ -291,16 +291,24 @@ class Spectrum:
         preserve_input_dtype: bool = True,
         by: str = "pixel",
         parallel: bool | str | None = None,
+        empty_output_shape: tuple[int, ...] | None = None,
         **kwargs,
     ) -> np.ndarray:
-        """Apply *f* to spectral data row-by-row (``by='pixel'``)."""
+        """Apply *f* row-by-row (``by='pixel'``).
+
+        For empty input, ``empty_output_shape`` specifies the shape returned
+        by *f* for one row; use ``()`` for scalar reducers. When omitted,
+        the input row's shape is preserved.
+        """
         if by != "pixel":
             raise ValueError("Only by='pixel' is supported for Spectrum.apply_func")
         if data is None:
             data = self.data
         data = np.asarray(data)
         output_dtype = data.dtype if preserve_input_dtype else None
-        return _apply_rows_standalone(f, data, parallel=parallel, output_dtype=output_dtype, kwargs=kwargs)
+        return _apply_rows_standalone(
+            f, data, parallel=parallel, output_dtype=output_dtype, kwargs=kwargs, empty_output_shape=empty_output_shape
+        )
 
     def get_indices(
         self,
@@ -344,6 +352,7 @@ class Spectrum:
         common_spectral_axis: bool = False,
         ignore_calibration: bool = False,
         allow_multiple_spectra: bool = False,
+        roi_tol: float | None = None,
     ) -> TSpectrum:
         """Align *spectrum* to this spectrum's spectral axis and ROI.
 
@@ -352,14 +361,20 @@ class Spectrum:
         spectrum : Spectrum
             The spectrum to align.
         overlap : bool | 'full'
-            ``True``: allow partial overlap. ``'full'``: ROIs must match
-            exactly. ``False``: skip overlap check entirely.
+            ``True``: allow partial overlap. ``'full'``: the reference must
+            cover each target ROI within *roi_tol*, and the result uses the
+            target ROI's spectral grid. ``False``: skip overlap checks.
         common_spectral_axis : bool
             If ``True``, require identical spectral axes.
         ignore_calibration : bool
             Skip unit comparison.
         allow_multiple_spectra : bool
             If ``False``, raise when *spectrum* contains more than one pixel.
+        roi_tol : float | None
+            Absolute ROI edge tolerance used by ``overlap='full'``, in spectral units.
+            Defaults to half the median spectral step of this spectrum, or
+            zero for a one-point axis. Within tolerance, missing edge values
+            are filled with the nearest reference value.
 
         Returns
         -------
@@ -376,7 +391,10 @@ class Spectrum:
         ):
             raise ValueError("Reference spectrum has a different spectral unit")
 
-        if not allow_multiple_spectra and np.squeeze(spectrum.data).ndim != 1:
+        if roi_tol is not None and (not np.isfinite(roi_tol) or roi_tol < 0):
+            raise ValueError("roi_tol must be finite and nonnegative")
+
+        if not allow_multiple_spectra and np.prod(spectrum.data.shape[:-1]) != 1:
             raise ValueError("Reference spectrum is composed of multiple spectra")
 
         if common_spectral_axis:
@@ -391,15 +409,57 @@ class Spectrum:
                 return spectrum
             raise ValueError("Reference spectrum has a different spectral axis")
 
+        if overlap == "full":
+            tol = (
+                roi_tol
+                if roi_tol is not None
+                else (0.5 * float(np.median(np.diff(self.x))) if self.x.size > 1 else 0.0)
+            )
+            for start, end in self.roi_x:
+                if not any(start >= ref_start - tol and end <= ref_end + tol for ref_start, ref_end in spectrum.roi_x):
+                    raise ValueError("Regions of interest do not fully match")
+
+            indices = select_x_indices(self.x, self.roi_x, keep_regions=True)
+            grids = [self.x[idx] for idx in indices]
+            target_x = np.hstack(grids)
+            new_spectrum = copy.deepcopy(spectrum)
+            ref_indices = select_x_indices(spectrum.x, self.roi_x)
+            inside_reference = all(
+                any(grid[0] >= start and grid[-1] <= end for start, end in spectrum.roi_x) for grid in grids
+            )
+            if inside_reference and np.array_equal(spectrum.x[ref_indices], target_x):
+                new_spectrum.data = spectrum.data[..., ref_indices].copy()
+                new_spectrum.x = target_x.copy()
+                new_spectrum.roi_x = self.roi_x.copy()
+                return new_spectrum
+            if target_x.size == 1:
+                ref_roi = next(region for region in spectrum.roi_x if region[0] - tol <= target_x[0] <= region[1] + tol)
+                ref_idx = select_x_indices(spectrum.x, ref_roi)
+                new_spectrum.data = np.array(
+                    [np.interp(target_x, spectrum.x[ref_idx], row[ref_idx]) for row in spectrum.data],
+                    dtype=spectrum.data.dtype,
+                )
+                new_spectrum.x = target_x.copy()
+                new_spectrum.roi_x = self.roi_x.copy()
+                return new_spectrum
+            if spectrum.x.size < 2:
+                raise ValueError("Cannot align a single-point reference to a multi-point spectral axis")
+            from ramappy.processing import resample
+
+            region_sizes = [spectrum.x[select_x_indices(spectrum.x, [grid[0], grid[-1]])].size for grid in grids]
+            kind = "cubic" if min(region_sizes) >= 4 else "slinear"
+            resample(new_spectrum, x_grid=grids, spline_kind=kind, roi_tol=tol)
+            if not np.array_equal(new_spectrum.x, target_x):
+                raise ValueError("Aligned spectrum does not match the target spectral axis")
+            new_spectrum.roi_x = self.roi_x.copy()
+            return new_spectrum
+
         if overlap is not False:
             if spectrum.roi_x[-1][-1] < self.roi_x[0][0] or spectrum.roi_x[0][0] > self.roi_x[-1][-1]:
                 raise ValueError("Reference spectrum is out of the spectral range of the SpectralMap data")
             roi_x_common = common_roi_overlap(spectrum.roi_x, self.roi_x)
             if len(roi_x_common) == 0:
                 raise ValueError("No overlapping regions of interest")
-            if overlap == "full" and not np.allclose(self.roi_x, roi_x_common, rtol=1e-04):
-                raise ValueError("Regions of interest do not fully match")
-
             x_idx_hsi = select_x_indices(self.x, roi_x_common)
             x_idx_ref = select_x_indices(spectrum.x, roi_x_common)
             if not np.array_equal(spectrum.x[x_idx_ref], self.x[x_idx_hsi]):

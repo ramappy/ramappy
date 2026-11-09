@@ -59,7 +59,7 @@ class CsvInputParams(IOParams, IOParamsAsHsi, IOParamsUnits):
     """Row index to use as column names. If `None`, no header is assumed. If `0` or `'infer'`, the first row is used as the header."""
 
     scan_pattern: Literal["bidirectional", "raster"] = "bidirectional"
-    """Unraveling pattern used during acquisition. 'bidirectional' means that every other row is reversed, while 'raster' means that all rows are in the same order."""
+    """Acquisition pattern. Pixels are read in runs of img_height; bidirectional reverses every other run."""
 
     name: str | None = None
     """Custom name for the spectrum or map. If not provided, the filename will be used as the name."""
@@ -104,7 +104,9 @@ def read_csv(
     csv_format: {'auto', 'wide', 'long'}, default='wide'
         TODO: The format in which the data are written...
     scan_pattern : {'bidirectional', 'raster'}, default='bidirectional'
-        The pattern used during acquisition (used to unravel data).
+        The pattern used during acquisition. The input is interpreted as
+        ``img_width`` consecutive runs of ``img_height`` pixels; for
+        bidirectional scans every other run is reversed.
     dtype : dtype, default = np.float32
         The dtype of the output data.
 
@@ -205,16 +207,16 @@ def read_csv(
             name=name if name is not None else filepath_or_buffer,
         )
 
-    img = intensities.reshape(img_height, img_width, -1)
+    img = intensities.reshape(img_width, img_height, -1)
     if scan_pattern == "bidirectional":
         # reshape from snake-like format to C-format
         img[1::2, :, :] = img[1::2, ::-1, :]
 
     # fix coordinate system (image vs matrix)
-    img = np.rot90(img, k=1, axes=(0, 1))
-    img = np.flipud(img)
+    img = img.transpose(1, 0, 2)
 
-    intensities = img.reshape(img_height * img_width, -1)
+    n_spectral = intensities.shape[-1]
+    intensities = img.reshape(-1, n_spectral)
 
     return SpectralMap(
         x=x,

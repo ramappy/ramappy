@@ -115,7 +115,7 @@ class Quantity(StrEnum):
         if isinstance(value, str):
             normalized = value.lower()
             for member in cls:
-                if member.value == normalized:
+                if member.value.lower() == normalized:
                     return member
         return cls.UNDEFINED
 

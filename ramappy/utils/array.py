@@ -24,6 +24,17 @@ _AGG_FUNCS: dict[str, object] = {
 }
 
 
+def validate_spectral_axis(x: np.ndarray) -> None:
+    """Require a nonempty, finite, strictly increasing spectral axis."""
+    x = np.asarray(x)
+    if x.ndim != 1 or x.size == 0:
+        raise ValueError("Spectral axis must be a nonempty one-dimensional array")
+    if not (np.issubdtype(x.dtype, np.integer) or np.issubdtype(x.dtype, np.floating)) or not np.isfinite(x).all():
+        raise ValueError("Spectral axis must contain finite real numeric values")
+    if np.any(x[1:] <= x[:-1]):
+        raise ValueError("Spectral axis must be strictly increasing without repeated values")
+
+
 @jit(cache=True)
 def is_sorted(a: np.ndarray) -> bool:
     """Check if an array is sorted.

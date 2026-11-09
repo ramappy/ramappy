@@ -36,11 +36,13 @@ def _apply_rows(
     progress_wrapper: Callable,
     output_dtype: np.dtype | None,
     kwargs: dict,
+    empty_output_shape: tuple[int, ...] | None = None,
 ) -> np.ndarray:
     """Apply *func* to each row of *data*, with optional joblib parallelism."""
     n_items = len(data)
     if n_items == 0:
-        return np.array([], dtype=output_dtype)
+        shape = data.shape[1:] if empty_output_shape is None else empty_output_shape
+        return np.empty((0, *shape), dtype=output_dtype)
 
     # Heuristic: joblib dispatch overhead dominates for small workloads.
     # Keep the threshold conservative so expensive per-item functions still benefit.
@@ -75,10 +77,13 @@ def _apply_rows_standalone(
     parallel: bool | str | None = None,
     output_dtype: np.dtype | None = None,
     kwargs: dict | None = None,
+    empty_output_shape: tuple[int, ...] | None = None,
 ) -> np.ndarray:
     """Apply *func* to each row of *data* without requiring a SpectralMap instance."""
     use_parallel, parallel_backend = _resolve_parallel_config(parallel)
-    return _apply_rows(func, data, use_parallel, parallel_backend, _IDENTITY, output_dtype, kwargs or {})
+    return _apply_rows(
+        func, data, use_parallel, parallel_backend, _IDENTITY, output_dtype, kwargs or {}, empty_output_shape
+    )
 
 
 class _SpectralMapFunctionalMixin:
@@ -107,9 +112,15 @@ class _SpectralMapFunctionalMixin:
         by: Literal["pixel", "wavenumber", "map"] = "pixel",
         flatten: bool = True,  # only for `by='map'`
         parallel: bool | Literal["threads", "processes"] | None = None,
+        empty_output_shape: tuple[int, ...] | None = None,
         **kwargs,
     ) -> np.ndarray:
-        """Apply a function to SpectralMap data with optional parallelization."""
+        """Apply a function across the map.
+
+        For empty input, ``empty_output_shape`` specifies the shape returned
+        by the function for one item; use ``()`` for scalar reducers. When
+        omitted, the input item's shape is preserved.
+        """
 
         spectral_data = self.data if data is None else data
 
@@ -122,18 +133,41 @@ class _SpectralMapFunctionalMixin:
 
         if by == "wavenumber":
             result = _apply_rows(
-                f, spectral_data.T, use_parallel, parallel_backend, progress_wrapper, output_dtype, kwargs
+                f,
+                spectral_data.T,
+                use_parallel,
+                parallel_backend,
+                progress_wrapper,
+                output_dtype,
+                kwargs,
+                empty_output_shape,
             )
             return result.T
         if by == "pixel":
-            return _apply_rows(f, spectral_data, use_parallel, parallel_backend, progress_wrapper, output_dtype, kwargs)
+            return _apply_rows(
+                f,
+                spectral_data,
+                use_parallel,
+                parallel_backend,
+                progress_wrapper,
+                output_dtype,
+                kwargs,
+                empty_output_shape,
+            )
         if by == "map":
             # `spectral_data` is an ndarray here; infer the spectral size to allow roi_x subsets.
             cube = spectral_data.reshape(self.img_height, self.img_width, -1)
             # Iterate over wavenumber slices: (H, W, N) -> iterate N slices of shape (H, W)
             transposed_cube = np.transpose(cube, axes=[2, 0, 1])
             result = _apply_rows(
-                f, transposed_cube, use_parallel, parallel_backend, progress_wrapper, output_dtype, kwargs
+                f,
+                transposed_cube,
+                use_parallel,
+                parallel_backend,
+                progress_wrapper,
+                output_dtype,
+                kwargs,
+                empty_output_shape,
             )
             result = np.transpose(result, axes=(1, 2, 0))
             if flatten:

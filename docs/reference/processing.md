@@ -32,6 +32,14 @@ Supported methods: `arpls`, `airpls`, `iarpls` (PLS-based), `poly` (polynomial),
 
 {py:func}`ramappy.processing.resample.resample` resamples the spectral axis onto a target grid defined by a step size (`spectrum_step`), reference spectrum ID (`ref_spectrum_id`), or explicit grid (`x_grid`) using interpolation.
 
+Target grids must be finite and strictly increasing. An unsorted spectrum axis is sorted
+together with its data on construction, unless `ignore_sort=True`.
+For spline resampling, `roi_tol` permits limited grid overshoot using the
+nearest measured edge value; it is an absolute tolerance in spectral units.
+Whittaker resampling rejects extrapolation beyond the measured data.
+Full-overlap spectrum alignment returns the target ROI's spectral grid and
+uses the same edge-value policy within its tolerance.
+
 **Full reference:** {py:mod}`ramappy.processing.resample`
 
 ### Intensity Normalization

@@ -3,10 +3,11 @@ from __future__ import annotations
 import numpy as np
 import pytest
 from PIL import Image
-from scipy.ndimage import median_filter
+from scipy.ndimage import gaussian_filter, median_filter
 
 from ramappy.core.images2d import Image2D, Image2DRenderer
 from ramappy.core.spectral_map import SpectralMap
+from ramappy.core.spectrum import Spectrum
 from ramappy.processing.baseline import correct_baseline
 from ramappy.processing.denoising.despike import despike
 from ramappy.processing.denoising.smooth_spatial import smooth_spatial
@@ -55,6 +56,36 @@ def test_align_external_spectrum_allow_multiple_spectra_guard():
 
     # Should not raise when multiple spectra are explicitly allowed.
     hsi.align_external_spectrum(multi_row_spectrum, allow_multiple_spectra=True)
+
+
+def test_align_external_spectrum_full_overlap_roi_tol():
+    x = np.linspace(100.0, 200.0, 11)  # step 10
+    hsi = SpectralMap(x=x, data=np.ones((2, 11)), img_width=2, img_height=1)
+    # Reference stops one full step short of the map's ROI.
+    ref = Spectrum(x=x[:-1], data=np.ones(10))
+
+    with pytest.raises(ValueError, match="do not fully match"):
+        hsi.align_external_spectrum(ref, overlap="full")
+
+    aligned = hsi.align_external_spectrum(ref, overlap="full", roi_tol=10.0)
+    np.testing.assert_allclose(aligned.x, x)
+    np.testing.assert_allclose(aligned.data, 1.0)
+
+
+def test_align_external_spectrum_full_overlap_multi_region():
+    x = np.linspace(100.0, 300.0, 21)
+    hsi = SpectralMap(x=x, data=np.ones((2, 21)), img_width=2, img_height=1, roi_x=[[100, 150], [250, 300]])
+
+    # One ROI covering both disconnected map regions is a full overlap.
+    aligned = hsi.align_external_spectrum(Spectrum(x=x, data=np.ones(21)), overlap="full")
+    np.testing.assert_allclose(aligned.roi_x, [[100, 150], [250, 300]])
+
+    # A gap inside a map region, or a missing region, is not.
+    gapped = Spectrum(x=x, data=np.ones(21), roi_x=[[100, 120], [130, 150], [250, 300]])
+    with pytest.raises(ValueError, match="do not fully match"):
+        hsi.align_external_spectrum(gapped, overlap="full")
+    with pytest.raises(ValueError, match="do not fully match"):
+        hsi.align_external_spectrum(Spectrum(x=x[:11], data=np.ones(11)), overlap="full")
 
 
 def test_despike_mask_mapping_correctness():
@@ -180,3 +211,70 @@ def test_spatial_crop_image_bounds():
     # Check cropped image size
     img = Image2DRenderer.render(hsi.images["img"])
     assert img.size == (2, 1)  # width=2, height=1
+
+
+def test_spatial_crop_always_crops_images():
+    x = np.linspace(100.0, 200.0, 10)
+    intensities = np.ones((6, 10), dtype=float)
+    hsi = SpectralMap(x=x, data=intensities, img_width=3, img_height=2)
+
+    # Raster at twice the map resolution is cropped proportionally.
+    hsi.images["img_pil"] = Image2D(image=Image.new("RGB", (6, 4), color="red"))
+    hsi.images["img_data"] = Image2D(data=np.ones((2, 3), dtype=float))
+
+    crop_spatial(hsi, col_start=1, col_end=3, row_start=1, row_end=2)
+
+    assert Image2DRenderer.render(hsi.images["img_pil"]).size == (4, 2)
+    assert hsi.images["img_data"].data is not None
+    assert hsi.images["img_data"].data.shape == (1, 2)
+
+
+def test_spatial_crop_aux_data_differing_spectral_size():
+    x = np.linspace(100.0, 200.0, 10)
+    intensities = np.ones((6, 10), dtype=float)
+    hsi = SpectralMap(x=x, data=intensities, img_width=3, img_height=2)
+
+    aux_data = np.arange(18, dtype=float).reshape(6, 3)
+    hsi.aux_data["aux1"] = aux_data.copy()
+
+    crop_spatial(hsi, col_start=1, col_end=3, row_start=1, row_end=2)
+
+    assert hsi.img_width == 2
+    assert hsi.img_height == 1
+    assert hsi.aux_data["aux1"].shape == (2, 3)
+
+
+def test_full_alignment_exact_target_and_single_point():
+    s = Spectrum(x=np.arange(11.0), data=np.ones(11))
+    ref = Spectrum(x=np.arange(0.5, 11.0), data=np.arange(11.0))
+    aligned = s.align_external_spectrum(ref, overlap="full")
+    np.testing.assert_array_equal(aligned.x, s.x)
+    assert aligned.data.shape == s.data.shape
+    assert aligned.data[0, 0] == ref.data[0, 0]
+    target = Spectrum(x=np.array([1.0]), data=np.ones(1))
+    assert target.align_external_spectrum(target, overlap="full").data.shape == (1, 1)
+    aligned = target.align_external_spectrum(s, overlap="full")
+    np.testing.assert_array_equal(aligned.x, [1.0])
+
+
+def test_full_alignment_clamps_to_reference_roi_not_outside_samples():
+    x = np.arange(11.0)
+    ref = Spectrum(x=x, data=x, roi_x=[[2.0, 8.0]])
+    target = Spectrum(x=x[1:10], data=np.zeros(9))
+    aligned = target.align_external_spectrum(ref, overlap="full", roi_tol=1.0)
+    np.testing.assert_array_equal(aligned.x, target.x)
+    np.testing.assert_array_equal(aligned.data, [[2, 2, 3, 4, 5, 6, 7, 8, 8]])
+    single = Spectrum(x=np.array([1.0]), data=np.zeros(1))
+    aligned_single = single.align_external_spectrum(ref, overlap="full", roi_tol=1.0)
+    np.testing.assert_array_equal(aligned_single.data, [[2]])
+
+
+def test_gaussian_spatial_matches_per_channel_with_roi():
+    rng = np.random.default_rng(42)
+    data = rng.random((6, 5), dtype=np.float32)
+    m = SpectralMap(x=np.arange(5.0), data=data.copy(), img_width=3, img_height=2)
+    smooth_spatial(m, method="gaussian", sigma=1.0, roi_x=[1, 3])
+    expected = data.reshape(2, 3, 5).copy()
+    for i in range(1, 4):
+        expected[:, :, i] = gaussian_filter(expected[:, :, i], sigma=1.0)
+    np.testing.assert_allclose(m.cube, expected)
