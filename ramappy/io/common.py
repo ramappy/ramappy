@@ -66,7 +66,6 @@ def guess_file_type(filename: str) -> InputFormat:
                 except (PermissionError, FileNotFoundError):
                     raise
                 except Exception:
-                    logger.debug("Input format sniffer failed for %s", fmt.format_name, exc_info=True)
                     logger.warning("Input format sniffer failed for %s", fmt.format_name, exc_info=True)
 
         # Fallback if no sniffer matches:

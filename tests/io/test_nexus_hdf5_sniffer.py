@@ -49,6 +49,9 @@ def test_guess_file_type_logs_sniffer_errors_and_keeps_fallback(tmp_path, caplog
 
     assert selected.format_name == "hdf5"
     assert "Input format sniffer failed for hdf5_nexus" in caplog.text
+    records = [r for r in caplog.records if "Input format sniffer failed for hdf5_nexus" in r.message]
+    assert len(records) == 1
+    assert records[0].levelname == "WARNING"
 
 
 def test_guess_file_type_propagates_permission_and_file_not_found(tmp_path, monkeypatch):
@@ -67,4 +70,3 @@ def test_guess_file_type_propagates_permission_and_file_not_found(tmp_path, monk
     monkeypatch.setattr(nexus_format, "sniffer", not_found_sniffer)
     with pytest.raises(FileNotFoundError, match="File does not exist"):
         guess_file_type("some_file.h5")
-
