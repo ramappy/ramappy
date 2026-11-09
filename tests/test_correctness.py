@@ -3,7 +3,7 @@ from __future__ import annotations
 import numpy as np
 import pytest
 from PIL import Image
-from scipy.ndimage import median_filter
+from scipy.ndimage import gaussian_filter, median_filter
 
 from ramappy.core.images2d import Image2D, Image2DRenderer
 from ramappy.core.spectral_map import SpectralMap
@@ -267,3 +267,14 @@ def test_full_alignment_clamps_to_reference_roi_not_outside_samples():
     single = Spectrum(x=np.array([1.0]), data=np.zeros(1))
     aligned_single = single.align_external_spectrum(ref, overlap="full", roi_tol=1.0)
     np.testing.assert_array_equal(aligned_single.data, [[2]])
+
+
+def test_gaussian_spatial_matches_per_channel_with_roi():
+    rng = np.random.default_rng(42)
+    data = rng.random((6, 5), dtype=np.float32)
+    m = SpectralMap(x=np.arange(5.0), data=data.copy(), img_width=3, img_height=2)
+    smooth_spatial(m, method="gaussian", sigma=1.0, roi_x=[1, 3])
+    expected = data.reshape(2, 3, 5).copy()
+    for i in range(1, 4):
+        expected[:, :, i] = gaussian_filter(expected[:, :, i], sigma=1.0)
+    np.testing.assert_allclose(m.cube, expected)
