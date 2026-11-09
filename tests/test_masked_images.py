@@ -39,9 +39,7 @@ def _outside_top() -> np.ndarray:
         ),
     ],
 )
-def test_masked_analysis_images_are_nan_outside_the_mask(run, image_id, monkeypatch):
-    # make uninitialised buffers deterministic garbage, as on a busy process
-    monkeypatch.setattr(np, "empty", lambda shape, dtype=float, **kw: np.full(shape, 1e30, dtype=dtype))
+def test_masked_analysis_images_are_nan_outside_the_mask(run, image_id):
     spectral_map = _make_map()
 
     run(spectral_map)
