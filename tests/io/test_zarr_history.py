@@ -44,6 +44,7 @@ sys.modules.setdefault("renishawWiRE.types", renishaw_wire_types)
 from ramappy.core.images2d import Image2D
 from ramappy.core.images2d.group import Image2DGroup
 from ramappy.core.masks import Mask, MaskGroup
+from ramappy.core.pipeline import ProcessingStepConfig
 from ramappy.core.spectral_map import SpectralMap
 from ramappy.core.spectrum import Spectrum
 from ramappy.io.core import InputFormatRegistry
@@ -54,6 +55,7 @@ from ramappy.io.zarr.masks import write_zarr_mask
 from ramappy.io.zarr.reader import read_zarr
 from ramappy.io.zarr.store import ZarrProjectStore
 from ramappy.io.zarr.writer import _dedup_zip_central_directory, write_zarr
+from ramappy.pipeline.context import StepContext, StepRunner
 
 
 def _patch_find_nearest_x_many(monkeypatch) -> None:
@@ -578,6 +580,37 @@ def test_single_point_roi_and_zarr_roundtrip(tmp_path):
     np.testing.assert_array_equal(loaded.roi_x, [[1.0, 1.0]])
     aligned = loaded.align_external_spectrum(s, overlap="full")
     np.testing.assert_array_equal(aligned.data, [[5.0]])
+
+
+def test_pipeline_persists_in_place_changes_and_refreshed_images(tmp_path):
+    from ramappy.pipeline.context import persistence_middleware, transaction_middleware
+
+    m = SpectralMap(x=np.arange(4.0), data=np.arange(8.0).reshape(2, 4) + 1, img_width=2, img_height=1)
+    m.masks["selection"] = m.new_mask([0], name="old")
+    m.images["image"] = m.intensity_map()
+    out = tmp_path / "store.zarr"
+    write_zarr(m, out_file=out)
+    store = ZarrProjectStore.open(out)
+    ctx = StepContext(data=m, step_config=ProcessingStepConfig(name="normalize", params={}), store=store)
+
+    def mutate(context):
+        context.data.masks["selection"].name = "new"
+
+    persistence_middleware(ctx, lambda c: transaction_middleware(c, mutate))
+    assert ctx.changes.masks["changed"] == {"selection"}
+    assert read_zarr(out).masks["selection"].name == "new"
+
+    ctx = StepContext(
+        data=m,
+        step_config=ProcessingStepConfig(name="normalize", params={"norm": "max"}),
+        store=store,
+        options={"update_images": True},
+    )
+    StepRunner().run(ctx)
+    assert ctx.changes.images["changed"] == {"image"}
+    loaded = read_zarr(out)
+    np.testing.assert_allclose(loaded.images["image"].data, m.images["image"].data)
+    np.testing.assert_allclose(loaded.data, m.data)
 
 
 def test_pipeline_resample_persists_axis_and_data(tmp_path):
