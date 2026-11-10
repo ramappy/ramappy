@@ -174,22 +174,25 @@ def _get_coeff_map(
     if img.data is None:
         raise ValueError(f"Image '{abundance_image_id}' has no numeric data")
 
-    coeff = np.asarray(img.data)
+    # Masked or non-finite pixels carry no abundance: they're excluded from scaling and get a
+    # zero coefficient, so the subtraction leaves them unchanged.
+    coeff = np.ma.masked_invalid(np.ma.asarray(img.data, dtype=np.float64))
     if coeff.ndim != 2:
         raise ValueError("Coefficient image must be a 2-D array")
     if coeff.shape != spectral_map.map_shape:
         raise ValueError(
             f"Coefficient image shape does not match cube spatial shape: expected {spectral_map.map_shape}, got {coeff.shape}"
         )
+    if coeff.count() == 0:
+        raise ValueError(f"Image '{abundance_image_id}' has no valid values")
     if scale_to_unit:
-        coeff = coeff.astype(np.float64, copy=False)
-        coeff_min = np.nanmin(coeff)
-        coeff_max = np.nanmax(coeff)
+        coeff_min = coeff.min()
+        coeff_max = coeff.max()
         denom = coeff_max - coeff_min
-        coeff = np.zeros_like(coeff) if denom == 0 else (coeff - coeff_min) / denom
+        coeff = np.ma.zeros(coeff.shape) if denom == 0 else (coeff - coeff_min) / denom
     if invert_abundance:
         coeff = -coeff
-    return coeff
+    return np.ma.filled(coeff, 0.0)
 
 
 def _resolve_spectrum_to_subtract(
