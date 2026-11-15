@@ -112,8 +112,8 @@ class StepCorrectBaselineParamsPoly(StepCorrectBaselineParams):
     method: Literal["poly", "imodpoly", "goldindec"] = "poly"
     """Baseline correction method to use."""
 
-    poly_order: int | None = Field(ge=1)
-    """Polynomial order for the baseline correction. If None, the method will choose a default value. Higher values result in more flexible baselines."""
+    poly_order: int | None = Field(default=None, ge=1)
+    """Polynomial order for the baseline correction. If None (the default), the method will choose a default value. Higher values result in more flexible baselines."""
 
 
 @pipeline_step(
@@ -177,6 +177,8 @@ def correct_baseline(
     if method in {"arpls", "drpls", "iarpls", "aspls", "airpls", "poly", "imodpoly", "goldindec", "beads", "snip"}:
         if method in {"arpls", "drpls", "iarpls", "aspls", "airpls"}:
             kwargs["lam"] = kwargs.pop("lambda_", None)
+        elif method in {"poly", "imodpoly", "goldindec"} and kwargs.get("poly_order") is None:
+            kwargs.pop("poly_order", None)
 
         n_items = intensities.shape[0] if intensities.ndim > 1 else 1
         # `apply_func` itself falls back to a serial loop for small workloads (joblib
