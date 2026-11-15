@@ -174,7 +174,7 @@ def despike(
         # map spikes indices (relative to pixel_idx subset) to map indices
         spikes = pixel_idx[np.array(spikes)]
 
-    if correct_spikes:
+    if correct_spikes and spikes.size:
         # replace bad pixel spectra with the median of the neighbouring pixels
         iy, ix = np.unravel_index(spikes, (spectral_map.img_height, spectral_map.img_width))
         # get neighbours (3x3), don't remove spike itself (median can use spectral info not affected by spike)
