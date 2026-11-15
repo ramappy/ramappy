@@ -29,15 +29,9 @@ _PYBASELINES_BASELINE_CACHE: OrderedDict[tuple, Baseline] = OrderedDict()
 
 
 def _x_cache_key(x: np.ndarray) -> tuple:
-    """Create a safe cache key for an x-axis view.
-
-    We purposely key by the underlying buffer pointer + shape/strides/dtype so that we
-    *only* reuse a cached Baseline instance when `x` points to the exact same memory
-    region. This avoids correctness issues from approximate hashing of x values.
-    """
-    x = np.asarray(x)
-    ptr = int(x.__array_interface__["data"][0])
-    return (ptr, x.shape, x.strides, x.dtype.str)
+    """Create an exact value-based cache key for a pybaselines x-axis."""
+    x = np.asarray(x, dtype=float)
+    return (x.shape, x.tobytes())
 
 
 def _get_cached_baseline_fitter(x: np.ndarray) -> Baseline:
@@ -48,7 +42,9 @@ def _get_cached_baseline_fitter(x: np.ndarray) -> Baseline:
         _PYBASELINES_BASELINE_CACHE.move_to_end(key)
         return fitter
 
-    fitter = Baseline(x_data=np.asarray(x), assume_sorted=True)
+    # Construct the fitter from the same immutable snapshot used for its key.
+    x = np.frombuffer(key[1], dtype=float).reshape(key[0]).copy()
+    fitter = Baseline(x_data=x, assume_sorted=True)
     _PYBASELINES_BASELINE_CACHE[key] = fitter
     _PYBASELINES_BASELINE_CACHE.move_to_end(key)
     if len(_PYBASELINES_BASELINE_CACHE) > _PYBASELINES_BASELINE_CACHE_MAXSIZE:
@@ -187,6 +183,8 @@ def correct_baseline(
         # dispatch overhead dominates below `_PARALLEL_MIN_ITEMS`), so only bypass the
         # cached fitter when the call will actually run concurrently across threads/processes.
         if n_jobs != 1 and n_items >= _PARALLEL_MIN_ITEMS:
+            x = np.asarray(x, dtype=float)
+
             # Each parallel call needs its own Baseline instance (not thread-safe to share).
             def _fit_pls(d: np.ndarray) -> np.ndarray:
                 return getattr(Baseline(x_data=x, assume_sorted=True), method)(d, **kwargs)[0]
